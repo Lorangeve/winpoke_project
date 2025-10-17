@@ -1,15 +1,15 @@
-use chumsky::{extra::Err, prelude::*};
+use chumsky::prelude::*;
 
 use crate::window::msg::{Message, WindowMessage};
 
 #[derive(Debug)]
-struct Selector<'a> {
+pub(crate) struct Selector<'a> {
     selector: Option<&'a str>,
     value: &'a str,
 }
 
 #[derive(Debug)]
-struct Command<'a> {
+pub(crate) struct Command<'a> {
     selector: Option<Selector<'a>>,
     commands: Vec<Message>,
 }
@@ -41,27 +41,22 @@ fn parser<'src>() -> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err
             "UP" => Message {
                 msg: WindowMessage::KeyDown(0x26),
                 count: count.unwrap_or(1),
-                ..Default::default()
             },
             "DOWN" => Message {
                 msg: WindowMessage::KeyDown(0x28),
                 count: count.unwrap_or(1),
-                ..Default::default()
             },
             "LEFT" => Message {
                 msg: WindowMessage::KeyDown(0x25),
                 count: count.unwrap_or(1),
-                ..Default::default()
             },
             "RIGHT" => Message {
                 msg: WindowMessage::KeyDown(0x27),
                 count: count.unwrap_or(1),
-                ..Default::default()
             },
             other => Message {
                 msg: WindowMessage::Char(other.chars().next().unwrap_or_default()),
                 count: count.unwrap_or(1),
-                ..Default::default()
             },
         })
         .delimited_by(just('{').or_not(), just('}').or_not());

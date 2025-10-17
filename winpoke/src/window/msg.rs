@@ -102,7 +102,6 @@ pub(crate) fn send_input_seq(input_seq: InputSequence) -> Result<()> {
                             ..Default::default()
                         },
                     },
-                    ..Default::default()
                 });
             }
             InputMessage::Hardware => todo!(),

@@ -57,7 +57,7 @@ pub fn set_foreground_window(hwnd: HWND) -> Result<()> {
 pub(crate) fn set_focus(hwnd: HWND) -> Result<()> {
     println!("set_focus(hwnd = {:?})", hwnd);
     // unsafe { SetFocus(Some(hwnd)) }.map_err(|e| Error::SetFocusFailed(e))?;
-    unsafe { SetFocus(Some(hwnd)) }.map_err(|e| Error::SetFocusFailed(e))?;
+    unsafe { SetFocus(Some(hwnd)) }.map_err(Error::SetFocusFailed)?;
 
     Ok(())
 }
