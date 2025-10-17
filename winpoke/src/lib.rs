@@ -1,4 +1,5 @@
 pub mod error;
+pub(crate) mod parser;
 pub mod window;
 
 pub mod prelude {
