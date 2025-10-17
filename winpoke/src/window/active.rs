@@ -47,13 +47,17 @@ pub fn open_process(pid: u32) -> Result<HANDLE> {
     Ok(handle)
 }
 
-pub(crate) fn set_focus(hwnd: HWND) -> Result<()> {
+pub fn set_foreground_window(hwnd: HWND) -> Result<()> {
     unsafe { SetForegroundWindow(hwnd) }
         .as_bool()
         .then_some(())
-        .ok_or(Error::SetForegroundWindowFailed)?;
+        .ok_or(Error::SetForegroundWindowFailed)
+}
 
-    unsafe { SetFocus(Some(hwnd)) }.map_err(|_| Error::SetFocusFailed)?;
+pub(crate) fn set_focus(hwnd: HWND) -> Result<()> {
+    println!("set_focus(hwnd = {:?})", hwnd);
+    // unsafe { SetFocus(Some(hwnd)) }.map_err(|e| Error::SetFocusFailed(e))?;
+    unsafe { SetFocus(Some(hwnd)) }.map_err(|e| Error::SetFocusFailed(e))?;
 
     Ok(())
 }
@@ -73,6 +77,8 @@ pub fn wait_for_input_idle(handle: HANDLE, milliseconds: u32) -> Result<u32> {
 
 #[cfg(test)]
 mod tests {
+    use crate::window::info::enum_child_window_with_class_name;
+
     use super::*;
     use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
     use windows::core::HSTRING;
@@ -84,5 +90,23 @@ mod tests {
         let info = crate::window::info::get_window_info(hwnd).expect("获取窗口信息失败");
         let handle = open_process(info.pid).expect("打开进程失败");
         println!("process handle: {:?}", handle);
+    }
+
+    #[test]
+    fn test_set_focus() {
+        let hwnd = unsafe { FindWindowW(&HSTRING::from("RegEdit_RegEdit"), None) }
+            .expect("找不到指定窗口");
+
+        set_foreground_window(hwnd).expect("设置前台窗口失败");
+
+        let tree_wnd = enum_child_window_with_class_name(hwnd, "SysTreeView32")
+            .expect("枚举子窗口失败")
+            .into_iter()
+            .next()
+            .ok_or(Error::WindowNotFound)
+            .expect("找不到子窗口");
+
+        show_window(tree_wnd).expect("显示窗口失败");
+        set_focus(tree_wnd).expect("设置焦点失败");
     }
 }

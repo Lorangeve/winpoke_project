@@ -6,7 +6,9 @@ pub(crate) mod style;
 use windows::Win32::Foundation::HWND;
 
 use crate::prelude::Result;
-use crate::window::active::{open_process, set_focus, show_window, wait_for_input_idle};
+use crate::window::active::{
+    open_process, set_focus, set_foreground_window, show_window, wait_for_input_idle,
+};
 use crate::window::msg::{Message, send_message_seq};
 use crate::window::style::WindowStyle;
 use info::*;
@@ -14,7 +16,7 @@ use info::*;
 #[derive(Debug, Default)]
 pub struct WindowInfo {
     /// 窗口句柄
-    pub hwnd: HWND,
+    pub(crate) hwnd: HWND,
 
     /// 窗口标题
     pub caption: String,
@@ -58,7 +60,7 @@ impl WindowInfo {
     }
 
     /// 获取一级子窗口
-    pub fn get_child_windows(&self) -> Result<Vec<WindowInfo>> {
+    pub fn find_child_windows(&self) -> Result<Vec<WindowInfo>> {
         let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)?
             .into_iter()
             .flat_map(get_window_info)
@@ -67,7 +69,8 @@ impl WindowInfo {
         Ok(infos)
     }
 
-    pub fn get_child_windows_with_class_name(
+    /// 获取一级子窗口，按类名过滤
+    pub fn find_child_windows_with_class_name(
         &self,
         class_name: impl AsRef<str>,
     ) -> Result<Vec<WindowInfo>> {
@@ -84,6 +87,11 @@ impl WindowInfo {
         show_window(self.hwnd)
     }
 
+    /// 设置窗口为前台窗口
+    pub fn set_foreground_window(&self) -> Result<()> {
+        set_foreground_window(self.hwnd)
+    }
+
     /// 设置窗口为前台窗口并获取焦点
     pub fn set_focus(&self) -> Result<()> {
         set_focus(self.hwnd)
@@ -91,8 +99,6 @@ impl WindowInfo {
 
     /// 发送消息到窗口
     pub fn send_message_seq(&self, msg_seq: Vec<Message>) -> Result<()> {
-        wait_for_input_idle(open_process(self.pid)?, 500)?;
-
         send_message_seq(self.hwnd, msg_seq)?;
 
         Ok(())
@@ -100,7 +106,7 @@ impl WindowInfo {
 
     /// 发送消息到窗口
     pub fn send_message(&self, msg: Message) -> Result<()> {
-        wait_for_input_idle(open_process(self.pid)?, 500)?;
+        wait_for_input_idle(open_process(self.pid)?, 500 * msg.count)?;
 
         send_message_seq(self.hwnd, vec![msg])?;
 
@@ -123,7 +129,7 @@ mod tests {
         let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit").unwrap();
         for window in windows {
             println!("Window: {:?}", window);
-            let children = window.get_child_windows().unwrap();
+            let children = window.find_child_windows().unwrap();
             for child in children {
                 println!("  Child: {:?}", child);
             }
@@ -136,11 +142,38 @@ mod tests {
         for window in windows {
             println!("Window: {:?}", window);
             let children = window
-                .get_child_windows_with_class_name("SysTreeView32")
+                .find_child_windows_with_class_name("SysTreeView32")
                 .unwrap();
             for child in children {
                 println!("  Child: {:?}", child);
             }
         }
+    }
+
+    #[test]
+    fn test_child_window_set_focus() {
+        let window = WindowInfo::find_by_class_name("RegEdit_RegEdit")
+            .expect("找不到指定窗口")
+            .into_iter()
+            .next()
+            .expect("没有窗口信息");
+
+        println!("Window: {:#?}", window);
+
+        let children = window
+            .find_child_windows_with_class_name("SysTreeView32")
+            .expect("枚举子窗口失败")
+            .into_iter()
+            .next()
+            .expect("找不到子窗口");
+
+        println!("  Child: {:#?}", children);
+        set_foreground_window(children.hwnd).expect("设置前台窗口失败");
+        show_window(children.hwnd).expect("显示窗口失败");
+        // child.set_focus().expect("设置焦点失败");
+        set_focus(children.hwnd).expect("设置焦点失败");
+        // unsafe { SetFocus(Some(children.hwnd)) }
+        //     .map_err(|e| Error::SetFocusFailed(e))
+        //     .expect("设置焦点失败");
     }
 }
