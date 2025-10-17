@@ -12,9 +12,7 @@ pub enum Error {
     #[error("设置前台窗口失败")]
     SetForegroundWindowFailed,
     #[error("设置窗口焦点失败")]
-    SetFocusFailed,
-    #[error("没有更多子窗口")]
-    NoMoreChildWindow,
+    SetFocusFailed(core::Error),
     #[error("获取窗口信息失败")]
     GetWindowInfoFailed,
     #[error("枚举窗口失败")]
