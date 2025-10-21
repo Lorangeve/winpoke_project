@@ -1,3 +1,5 @@
+pub mod keyboard;
+
 use windows::Win32::Foundation::{HWND, LPARAM, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::SendInput;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
@@ -118,7 +120,7 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_LEFT, VK_LWIN};
 
     use super::*;
-    use crate::{error::Error, window::WindowInfo};
+    use crate::{error::Error, prelude::Keyboard, window::WindowInfo};
 
     #[test]
     fn test_send_message() -> Result<()> {
@@ -141,23 +143,23 @@ mod tests {
             .send_message_seq(dbg!(vec![
                 // 循环发送左箭头，折叠到根节点
                 Message {
-                    msg: WindowMessage::KeyDown(VK_LEFT.0 as _),
+                    msg: WindowMessage::KeyDown(Keyboard::Left.to_virtual_key()),
                     count: 5,
                 },
                 Message {
-                    msg: WindowMessage::KeyDown(VK_LWIN.0 as _),
+                    msg: WindowMessage::KeyDown(Keyboard::Win.to_virtual_key()),
                     ..Default::default()
                 },
                 Message {
-                    msg: WindowMessage::KeyDown('D' as _),
+                    msg: WindowMessage::KeyDown(Keyboard::Char('D').to_virtual_key()),
                     ..Default::default()
                 },
                 Message {
-                    msg: WindowMessage::KeyUp(VK_LWIN.0 as _),
+                    msg: WindowMessage::KeyUp(Keyboard::Win.to_virtual_key()),
                     ..Default::default()
                 },
                 Message {
-                    msg: WindowMessage::KeyUp('D' as _),
+                    msg: WindowMessage::KeyUp(Keyboard::Char('D').to_virtual_key()),
                     ..Default::default()
                 },
             ]))
@@ -170,19 +172,19 @@ mod tests {
     fn test_send_input() -> Result<()> {
         send_input_seq(vec![
             InputMessage::Keyboard {
-                key: VK_LWIN.0 as _,
+                key: Keyboard::LWin.to_virtual_key(),
                 flag: None,
             },
             InputMessage::Keyboard {
-                key: 'D' as _,
+                key: Keyboard::Char('D').to_virtual_key(),
                 flag: None,
             },
             InputMessage::Keyboard {
-                key: VK_LWIN.0 as _,
+                key: Keyboard::LWin.to_virtual_key(),
                 flag: Some(KEYEVENTF_KEYUP.0),
             },
             InputMessage::Keyboard {
-                key: 'D' as _,
+                key: Keyboard::Char('D').to_virtual_key(),
                 flag: Some(KEYEVENTF_KEYUP.0),
             },
         ])?;
