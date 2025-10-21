@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 pub(crate) use chumsky::Parser;
-use chumsky::prelude::*;
+use chumsky::{prelude::*, text::newline};
 
 use crate::{
     prelude::Keyboard,
@@ -42,7 +42,7 @@ pub(crate) fn parser<'src>()
         .padded()
         .then(text::ident())
         .delimited_by(just("\""), just("\""))
-        .map(|(selector, value): (Option<&str>, &str)| match selector {
+        .map(|(selector, value): (Option<&str>, _)| match selector {
             Some(s) if s.starts_with("cl") => Selector::Class(value),
             Some(s) if s.starts_with("cap") => Selector::Caption(value),
             _ => Selector::Class(value),
@@ -62,16 +62,17 @@ pub(crate) fn parser<'src>()
         })
         .delimited_by(just('{').or_not(), just('}').or_not());
 
-    let command_seq = command.padded().repeated().collect();
+    let command_seq = command.repeated().collect();
 
     selector
         .padded()
         .then(command_seq)
+        .then_ignore(newline().or(just(';').ignored()))
         .map(|(sel, cmds)| Command {
             selector: sel,
             messages: cmds,
         })
-        .then_ignore(just(";").padded())
+        .padded()
         .repeated()
         .collect()
 }
@@ -85,13 +86,12 @@ mod tests {
     #[test]
     fn test_parser() {
         let src = r#"
-            "caption:HELP" {UP 3}{DOWN}{down}{down};
-            "caption:HELP" {UP 4}{DOWN}{down}{down};
-            "class:HELP" {UP 5}{DOWN}{down}{down};
-            "class: HELP" {UP 6}{DOWN}{down}{down};
-            "HELP" {UP 6}{DOWN}{down}{down};
-            {UP 6}{DOWN}{down}{down};
-            "#;
+        "caption:HELP" {UP 3}{DOWN}{down}{down};
+        "caption:HELP" {UP 4}{DOWN}{down}{down}; "class:HELP" {UP 5}{DOWN}{down}{down}
+        "class: HELP" {UP 6}{DOWN}{down}{down};
+        "HELP" {UP 6}{DOWN}{down}{down}
+        {UP 6}{DOWN}{down}{down}
+        "#;
 
         let result = dbg!(parser().parse(&src));
         let errors = result.errors();
