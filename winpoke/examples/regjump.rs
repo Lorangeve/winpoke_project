@@ -39,7 +39,7 @@ fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
     tree_wnd.set_foreground_window()?;
     // tree_wnd.set_focus();
 
-    window.send_message_seq(vec![
+    window.send_message_seq(&vec![
         Message {
             // 0x10288 是 regedit 的“定位到地址栏”命令（WM_COMMAND, ID_EDIT_JUMPTOADDRESSBAR）x10288),
             msg: WindowMessage::Command(0x10288),

@@ -1,6 +1,7 @@
 pub mod error;
 pub(crate) mod parser;
 pub mod window;
+pub mod evaluate;
 
 pub mod prelude {
     pub use crate::error::Error;

@@ -73,27 +73,27 @@ pub(crate) fn send_message(
     Ok(())
 }
 
-pub(crate) fn send_message_seq(hwnd: HWND, msg_seq: Vec<Message>) -> Result<()> {
+pub(crate) fn send_message_seq(hwnd: HWND, msg_seq: &Vec<Message>) -> Result<()> {
     for message in msg_seq {
-        match message.msg {
+        match &message.msg {
             WindowMessage::Char(c) => {
-                send_message(hwnd, WM_CHAR, Some(c as _), None, message.count)?
+                send_message(hwnd, WM_CHAR, Some(*c as _), None, message.count)?
             }
             WindowMessage::Command(cmd) => send_message(
                 hwnd,
                 WM_COMMAND,
-                Some(cmd),
+                Some(*cmd),
                 Some(hwnd.0 as _),
                 message.count,
             )?,
             WindowMessage::KeyDown(virtual_key) => {
-                send_message(hwnd, WM_KEYDOWN, Some(virtual_key), None, message.count)?
+                send_message(hwnd, WM_KEYDOWN, Some(*virtual_key), None, message.count)?
             }
             WindowMessage::KeyUp(virtual_key) => {
-                send_message(hwnd, WM_KEYUP, Some(virtual_key), None, message.count)?
+                send_message(hwnd, WM_KEYUP, Some(*virtual_key), None, message.count)?
             }
             WindowMessage::MouseMoveTo(x, y) => {
-                let lparam = ((y as u32) << 16) | (x as u32);
+                let lparam = ((*y as u32) << 16) | (*x as u32);
                 send_message(hwnd, WM_MOUSEMOVE, None, Some(lparam), message.count)?;
             }
             WindowMessage::MouseMoveBy(x, y) => {
@@ -107,12 +107,12 @@ pub(crate) fn send_message_seq(hwnd: HWND, msg_seq: Vec<Message>) -> Result<()> 
                 send_message(hwnd, WM_MOUSEMOVE, None, Some(lparam), message.count)?;
             }
             WindowMessage::MouseClick(x, y) => {
-                let lparam = ((y as u32) << 16) | (x as u32);
+                let lparam = ((*y as u32) << 16) | (*x as u32);
                 send_message(hwnd, WM_LBUTTONDOWN, None, Some(lparam), message.count)?;
                 send_message(hwnd, WM_LBUTTONUP, None, Some(lparam), message.count)?;
             }
             WindowMessage::MouseDoubleClick(x, y) => {
-                let lparam = ((y as u32) << 16) | (x as u32);
+                let lparam = ((*y as u32) << 16) | (*x as u32);
                 send_message(hwnd, WM_LBUTTONDOWN, None, Some(lparam), message.count)?;
                 send_message(hwnd, WM_LBUTTONUP, None, Some(lparam), message.count)?;
                 send_message(hwnd, WM_LBUTTONDOWN, None, Some(lparam), message.count)?;
@@ -125,7 +125,7 @@ pub(crate) fn send_message_seq(hwnd: HWND, msg_seq: Vec<Message>) -> Result<()> 
     Ok(())
 }
 
-pub(crate) fn send_input_seq(input_seq: InputSequence) -> Result<()> {
+pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
     let cbsize = std::mem::size_of::<INPUT>();
 
     let mut inputs: Vec<INPUT> = Vec::new();
@@ -137,8 +137,8 @@ pub(crate) fn send_input_seq(input_seq: InputSequence) -> Result<()> {
                     r#type: INPUT_MOUSE,
                     Anonymous: INPUT_0 {
                         mi: MOUSEINPUT {
-                            dx: x,
-                            dy: y,
+                            dx: *x,
+                            dy: *y,
                             mouseData: 0,
                             dwFlags: MOUSEEVENTF_MOVE,
                             time: 0,
@@ -152,7 +152,7 @@ pub(crate) fn send_input_seq(input_seq: InputSequence) -> Result<()> {
                     r#type: INPUT_KEYBOARD,
                     Anonymous: INPUT_0 {
                         ki: KEYBDINPUT {
-                            wVk: VIRTUAL_KEY(key as _),
+                            wVk: VIRTUAL_KEY(*key as _),
                             dwFlags: KEYBD_EVENT_FLAGS(flag.unwrap_or_default()),
                             ..Default::default()
                         },
@@ -192,7 +192,7 @@ mod tests {
         tree_wnd.set_focus()?;
 
         tree_wnd
-            .send_message_seq(dbg!(vec![
+            .send_message_seq(dbg!(&vec![
                 // 循环发送左箭头，折叠到根节点
                 Message {
                     msg: WindowMessage::KeyDown(Keyboard::ArrowLeft.to_virtual_key()),
@@ -222,7 +222,7 @@ mod tests {
 
     #[test]
     fn test_send_input() -> Result<()> {
-        send_input_seq(vec![
+        send_input_seq(&vec![
             InputMessage::Keyboard {
                 key: Keyboard::LWin.to_virtual_key(),
                 flag: None,
@@ -256,7 +256,7 @@ mod tests {
         let center_x = (screen_width / 2) * 65535 / screen_width;
         let center_y = (screen_height / 2) * 65535 / screen_height;
 
-        send_input_seq(vec![InputMessage::Mouse {
+        send_input_seq(&vec![InputMessage::Mouse {
             x: center_x,
             y: center_y,
         }])?;

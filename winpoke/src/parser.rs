@@ -1,21 +1,34 @@
+use std::str::FromStr;
+
+pub(crate) use chumsky::Parser;
 use chumsky::prelude::*;
 
-use crate::{prelude::Keyboard, window::msg::{Message, WindowMessage}};
+use crate::{
+    prelude::Keyboard,
+    window::msg::{Message, WindowMessage},
+};
+
+// #[derive(Debug)]
+// pub(crate) struct Selector<'a> {
+//     pub(crate) selector: Option<&'a str>,
+//     pub(crate) value: &'a str,
+// }
 
 #[derive(Debug)]
-pub(crate) struct Selector<'a> {
-    selector: Option<&'a str>,
-    value: &'a str,
+pub(crate) enum Selector<'a> {
+    Class(&'a str),
+    Caption(&'a str),
+    None,
 }
 
 #[derive(Debug)]
 pub(crate) struct Command<'a> {
-    selector: Option<Selector<'a>>,
-    commands: Vec<Message>,
+    pub(crate) selector: Option<Selector<'a>>,
+    pub(crate) messages: Vec<Message>,
 }
 
-fn parser<'src>() -> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err<Rich<'src, char>>>
-{
+pub(crate) fn parser<'src>()
+-> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err<Rich<'src, char>>> {
     // ident is a atom
     let ident = text::ident().labelled("identifier");
 
@@ -30,34 +43,23 @@ fn parser<'src>() -> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err
         .padded()
         .then(text::ident())
         .delimited_by(just("\""), just("\""))
-        .map(|(selector, value)| Selector { selector, value })
+        .map(|(selector, value)| match selector {
+            Some("class") => Selector::Class(value),
+            Some("caption") => Selector::Caption(value),
+            _ => Selector::None,
+        })
         .or_not();
 
     let command = ident
         .then_ignore(just(' ').or_not())
         .then(count)
-        .or(ident.map(|s: &str| (s, None)))
-        .map(|(s, count)| match s.to_uppercase().as_str() {
-            "UP" => Message {
-                msg: WindowMessage::KeyDown(Keyboard::ArrowUp.into()),
-                count: count.unwrap_or(1),
-            },
-            "DOWN" => Message {
-                msg: WindowMessage::KeyDown(Keyboard::ArrowDown.into()),
-                count: count.unwrap_or(1),
-            },
-            "LEFT" => Message {
-                msg: WindowMessage::KeyDown(Keyboard::ArrowLeft.into()),
-                count: count.unwrap_or(1),
-            },
-            "RIGHT" => Message {
-                msg: WindowMessage::KeyDown(Keyboard::ArrowRight.into()),
-                count: count.unwrap_or(1),
-            },
-            other => Message {
-                msg: WindowMessage::Char(other.chars().next().unwrap_or_default()),
-                count: count.unwrap_or(1),
-            },
+        .map(|(s, count): (&str, Option<u32>)| Message {
+            msg: WindowMessage::KeyDown(
+                Keyboard::from_str(&s.to_uppercase())
+                    .map(|k| u32::from(k))
+                    .unwrap_or(0),
+            ),
+            count: count.unwrap_or(1),
         })
         .delimited_by(just('{').or_not(), just('}').or_not());
 
@@ -68,7 +70,7 @@ fn parser<'src>() -> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err
         .then(command_seq)
         .map(|(sel, cmds)| Command {
             selector: sel,
-            commands: cmds,
+            messages: cmds,
         })
         .then_ignore(just(";").padded())
         .repeated()

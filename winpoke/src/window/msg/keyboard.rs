@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_BACK, VK_CAPITAL, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F1, VK_HOME,
     VK_INSERT, VK_LEFT, VK_LWIN, VK_MENU, VK_NEXT, VK_NUMLOCK, VK_NUMPAD0, VK_PAUSE, VK_PRIOR,
@@ -68,6 +70,66 @@ pub enum Keyboard {
 
     /// 小键盘, Numpad0 - Numpad9
     Numpad(u16),
+}
+
+impl FromStr for Keyboard {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "ctrl" => Ok(Keyboard::Ctrl),
+            "alt" => Ok(Keyboard::Alt),
+            "shift" => Ok(Keyboard::Shift),
+            "win" => Ok(Keyboard::Win),
+            "lwin" => Ok(Keyboard::LWin),
+            "rwin" => Ok(Keyboard::RWin),
+            "up" | "arrowup" => Ok(Keyboard::ArrowUp),
+            "down" | "arrowdown" => Ok(Keyboard::ArrowDown),
+            "left" | "arrowleft" => Ok(Keyboard::ArrowLeft),
+            "right" | "arrowright" => Ok(Keyboard::ArrowRight),
+            "tab" => Ok(Keyboard::Tab),
+            "enter" | "return" => Ok(Keyboard::Enter),
+            "esc" | "escape" => Ok(Keyboard::Esc),
+            "space" => Ok(Keyboard::Space),
+            "backspace" => Ok(Keyboard::Backspace),
+            "delete" | "del" => Ok(Keyboard::Delete),
+            "insert" | "ins" => Ok(Keyboard::Insert),
+            "home" => Ok(Keyboard::Home),
+            "end" => Ok(Keyboard::End),
+            "pageup" => Ok(Keyboard::PageUp),
+            "pagedown" => Ok(Keyboard::PageDown),
+            "numlock" => Ok(Keyboard::NumLock),
+            "capslock" => Ok(Keyboard::CapsLock),
+            "scrolllock" => Ok(Keyboard::ScrollLock),
+            "pause" => Ok(Keyboard::Pause),
+            _ => {
+                // F1-F24
+                if let Some(f_num) = s.strip_prefix('f') {
+                    if let Ok(n) = f_num.parse::<u16>() {
+                        if (1..=24).contains(&n) {
+                            return Ok(Keyboard::F(n));
+                        }
+                    }
+                }
+                // Numpad0-Numpad9
+                if let Some(np_num) = s.strip_prefix("numpad") {
+                    if let Ok(n) = np_num.parse::<u16>() {
+                        if (0..=9).contains(&n) {
+                            return Ok(Keyboard::Numpad(n));
+                        }
+                    }
+                }
+                // 单字符
+                if s.len() == 1 {
+                    let c = s.chars().next().unwrap();
+                    if c.is_ascii() {
+                        return Ok(Keyboard::Char(c));
+                    }
+                }
+                Err(())
+            }
+        }
+    }
 }
 
 impl From<Keyboard> for u32 {

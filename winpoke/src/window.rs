@@ -51,6 +51,16 @@ impl WindowInfo {
         self.hwnd
     }
 
+    /// 获取所有**顶层**窗口
+    pub fn top_level_windows() -> Result<Vec<WindowInfo>> {
+        let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
+            .into_iter()
+            .flat_map(get_window_info)
+            .collect();
+
+        Ok(infos)
+    }
+
     /// 通过类名查找**顶层**窗口
     pub fn find_by_class_name<T: AsRef<str>>(class_name: T) -> Result<Vec<Self>> {
         let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
@@ -103,7 +113,7 @@ impl WindowInfo {
     }
 
     /// 发送消息到窗口
-    pub fn send_message_seq(&self, msg_seq: Vec<Message>) -> Result<()> {
+    pub fn send_message_seq(&self, msg_seq: &Vec<Message>) -> Result<()> {
         send_message_seq(self.hwnd, msg_seq)?;
 
         Ok(())
@@ -113,7 +123,7 @@ impl WindowInfo {
     pub fn send_message(&self, msg: Message) -> Result<()> {
         wait_for_input_idle(open_process(self.pid)?, 500 * msg.count)?;
 
-        send_message_seq(self.hwnd, vec![msg])?;
+        send_message_seq(self.hwnd, &vec![msg])?;
 
         Ok(())
     }
