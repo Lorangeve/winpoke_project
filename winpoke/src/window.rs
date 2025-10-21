@@ -46,6 +46,11 @@ pub struct WindowInfo {
 }
 
 impl WindowInfo {
+    /// 获取窗口句柄
+    pub fn hwnd(&self) -> HWND {
+        self.hwnd
+    }
+
     /// 通过类名查找**顶层**窗口
     pub fn find_by_class_name<T: AsRef<str>>(class_name: T) -> Result<Vec<Self>> {
         let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
