@@ -1,6 +1,6 @@
 use chumsky::prelude::*;
 
-use crate::window::msg::{Message, WindowMessage};
+use crate::{prelude::Keyboard, window::msg::{Message, WindowMessage}};
 
 #[derive(Debug)]
 pub(crate) struct Selector<'a> {
@@ -39,19 +39,19 @@ fn parser<'src>() -> impl Parser<'src, &'src str, Vec<Command<'src>>, extra::Err
         .or(ident.map(|s: &str| (s, None)))
         .map(|(s, count)| match s.to_uppercase().as_str() {
             "UP" => Message {
-                msg: WindowMessage::KeyDown(0x26),
+                msg: WindowMessage::KeyDown(Keyboard::ArrowUp.into()),
                 count: count.unwrap_or(1),
             },
             "DOWN" => Message {
-                msg: WindowMessage::KeyDown(0x28),
+                msg: WindowMessage::KeyDown(Keyboard::ArrowDown.into()),
                 count: count.unwrap_or(1),
             },
             "LEFT" => Message {
-                msg: WindowMessage::KeyDown(0x25),
+                msg: WindowMessage::KeyDown(Keyboard::ArrowLeft.into()),
                 count: count.unwrap_or(1),
             },
             "RIGHT" => Message {
-                msg: WindowMessage::KeyDown(0x27),
+                msg: WindowMessage::KeyDown(Keyboard::ArrowRight.into()),
                 count: count.unwrap_or(1),
             },
             other => Message {

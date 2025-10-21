@@ -20,13 +20,13 @@ pub enum Keyboard {
     RWin,
 
     /// 方向键：上
-    Up,
+    ArrowUp,
     /// 方向键：下
-    Down,
+    ArrowDown,
     /// 方向键：左
-    Left,
+    ArrowLeft,
     /// 方向键：右
-    Right,
+    ArrowRight,
 
     /// Tab 键
     Tab,
@@ -80,10 +80,10 @@ impl From<Keyboard> for u32 {
             Keyboard::RWin => VK_RWIN.0 as u32,
 
             // 方向键
-            Keyboard::Up => VK_UP.0 as u32,
-            Keyboard::Down => VK_DOWN.0 as u32,
-            Keyboard::Left => VK_LEFT.0 as u32,
-            Keyboard::Right => VK_RIGHT.0 as u32,
+            Keyboard::ArrowUp => VK_UP.0 as u32,
+            Keyboard::ArrowDown => VK_DOWN.0 as u32,
+            Keyboard::ArrowLeft => VK_LEFT.0 as u32,
+            Keyboard::ArrowRight => VK_RIGHT.0 as u32,
 
             // 其他常用键
             Keyboard::Tab => VK_TAB.0 as u32,
@@ -115,8 +115,6 @@ impl From<Keyboard> for u32 {
 
             Keyboard::Char(c) if c.is_ascii() => c as u32,
             Keyboard::Char(_) => panic!("仅支持 ASCII 字符"),
-
-            _ => 0,
         }
     }
 }
@@ -132,10 +130,10 @@ impl Keyboard {
             Keyboard::RWin => VK_RWIN.0 as u32,
 
             // 方向键
-            Keyboard::Up => VK_UP.0 as u32,
-            Keyboard::Down => VK_DOWN.0 as u32,
-            Keyboard::Left => VK_LEFT.0 as u32,
-            Keyboard::Right => VK_RIGHT.0 as u32,
+            Keyboard::ArrowUp => VK_UP.0 as u32,
+            Keyboard::ArrowDown => VK_DOWN.0 as u32,
+            Keyboard::ArrowLeft => VK_LEFT.0 as u32,
+            Keyboard::ArrowRight => VK_RIGHT.0 as u32,
 
             // 其他常用键
             Keyboard::Tab => VK_TAB.0 as u32,
@@ -167,8 +165,6 @@ impl Keyboard {
 
             Keyboard::Char(c) if c.is_ascii() => *c as u32,
             Keyboard::Char(_) => panic!("仅支持 ASCII 字符"),
-
-            _ => 0,
         }
     }
 }

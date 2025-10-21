@@ -143,7 +143,7 @@ mod tests {
             .send_message_seq(dbg!(vec![
                 // 循环发送左箭头，折叠到根节点
                 Message {
-                    msg: WindowMessage::KeyDown(Keyboard::Left.to_virtual_key()),
+                    msg: WindowMessage::KeyDown(Keyboard::ArrowLeft.to_virtual_key()),
                     count: 5,
                 },
                 Message {
