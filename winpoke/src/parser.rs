@@ -67,8 +67,8 @@ pub(crate) fn parser<'src>()
     selector
         .padded()
         .then(command_seq)
-        .then_ignore(newline().or(just(';').ignored()))
-        .map(|(sel, cmds)| Command {
+        .then(newline().ignored().or(just(';').ignored()))
+        .map(|((sel, cmds), _)| Command {
             selector: sel,
             messages: cmds,
         })
@@ -92,6 +92,28 @@ mod tests {
         "HELP" {UP 6}{DOWN}{down}{down}
         {UP 6}{DOWN}{down}{down}
         "#;
+
+        let result = dbg!(parser().parse(&src));
+        let errors = result.errors();
+
+        for e in errors {
+            Report::build(ReportKind::Error, ((), e.span().into_range()))
+                .with_config(ariadne::Config::new().with_index_type(ariadne::IndexType::Byte))
+                .with_message(e.to_string())
+                .with_label(
+                    Label::new(((), e.span().into_range()))
+                        .with_message(e.reason().to_string())
+                        .with_color(Color::Red),
+                )
+                .finish()
+                .print(Source::from(&src))
+                .unwrap()
+        }
+    }
+
+    #[test]
+    fn test_parser_oneline() {
+        let src = r#""caption:HELP" {UP 3}{DOWN}{down}{down}"#;
 
         let result = dbg!(parser().parse(&src));
         let errors = result.errors();
