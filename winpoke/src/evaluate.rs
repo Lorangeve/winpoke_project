@@ -30,7 +30,7 @@ pub fn eval(s: &str) -> Result<()> {
                 }
                 continue;
             }
-            Some(Selector::None) | None => {
+            None => {
                 continue;
             }
         }
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn test_eval() {
         let src = r#"
-            "class:RegEdit_RegEdit" {LEFT 3}{DOWN}{down}{down};
+            "RegEdit_RegEdit" {LEFT 3}{DOWN}{down}{down};
             "#;
 
         let _ = eval(src);

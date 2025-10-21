@@ -18,7 +18,6 @@ use crate::{
 pub(crate) enum Selector<'a> {
     Class(&'a str),
     Caption(&'a str),
-    None,
 }
 
 #[derive(Debug)]
@@ -43,10 +42,10 @@ pub(crate) fn parser<'src>()
         .padded()
         .then(text::ident())
         .delimited_by(just("\""), just("\""))
-        .map(|(selector, value)| match selector {
-            Some("class") => Selector::Class(value),
-            Some("caption") => Selector::Caption(value),
-            _ => Selector::None,
+        .map(|(selector, value): (Option<&str>, &str)| match selector {
+            Some(s) if s.starts_with("cl") => Selector::Class(value),
+            Some(s) if s.starts_with("cap") => Selector::Caption(value),
+            _ => Selector::Class(value),
         })
         .or_not();
 
