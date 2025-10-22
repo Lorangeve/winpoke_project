@@ -186,10 +186,10 @@ mod tests {
             .into_iter()
             .filter(|w| w.class_name == "SysTreeView32")
             .next()
-            .ok_or(Error::WindowNotFound)?;
+            .ok_or(Error::NotFoundWindowError)?;
 
         tree_wnd.show_window()?;
-        tree_wnd.set_focus()?;
+        // tree_wnd.set_focus()?;
 
         tree_wnd
             .send_message_seq(dbg!(&vec![

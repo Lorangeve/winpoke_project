@@ -13,7 +13,7 @@ use winpoke::{
 fn find_regedit() -> Result<WindowInfo> {
     let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit")?;
 
-    windows.into_iter().next().ok_or(Error::WindowNotFound)
+    windows.into_iter().next().ok_or(Error::NotFoundWindowError)
 }
 
 fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
@@ -33,7 +33,7 @@ fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
         .find_child_windows_with_class_name("SysTreeView32")?
         .into_iter()
         .next()
-        .ok_or(Error::WindowNotFound)?;
+        .ok_or(Error::NotFoundWindowError)?;
 
     #[allow(unused_must_use)]
     tree_wnd.set_foreground_window()?;
