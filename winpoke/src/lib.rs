@@ -1,7 +1,9 @@
+// #![doc = include_str!("..\\README.md")]
+
 pub mod error;
+pub mod evaluate;
 pub(crate) mod parser;
 pub mod window;
-pub mod evaluate;
 
 pub mod prelude {
     pub use crate::error::Error;

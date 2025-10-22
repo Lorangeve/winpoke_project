@@ -29,11 +29,13 @@ fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
 
     println!("找到 regedit.exe 窗口: \n{:?}", window);
 
-    let tree_wnd = window
-        .find_child_windows_with_class_name("SysTreeView32")?
-        .into_iter()
-        .next()
-        .ok_or(Error::NotFoundWindowError)?;
+    let tree_wnd = dbg!(
+        window
+            .find_child_windows_with_class_name("SysTreeView32")?
+            .into_iter()
+            .next()
+            .ok_or(Error::NotFoundWindowError)?
+    );
 
     #[allow(unused_must_use)]
     tree_wnd.set_foreground_window()?;

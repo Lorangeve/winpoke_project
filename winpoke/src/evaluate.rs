@@ -1,4 +1,4 @@
-use ariadne::{Color, Label, Report, ReportKind, Source};
+// use ariadne::{Color, Label, Report, ReportKind, Source};
 
 use crate::parser::{Parser, Selector, parser};
 use crate::prelude::Result;
@@ -10,7 +10,12 @@ pub fn eval(s: &str) -> Result<()> {
     for command in commands.unwrap() {
         match &command.selector {
             Some(Selector::Class(value)) => {
-                let windows = WindowInfo::find_by_class_name(&value)?;
+                let windows = dbg!(
+                    WindowInfo::all_windows()?
+                        .into_iter()
+                        .filter(|w| w.class_name == *value)
+                        .collect::<Vec<WindowInfo>>()
+                );
 
                 for window in windows {
                     window.set_foreground_window()?;
@@ -19,7 +24,7 @@ pub fn eval(s: &str) -> Result<()> {
                 continue;
             }
             Some(Selector::Caption(value)) => {
-                let windows: Vec<WindowInfo> = WindowInfo::top_level_windows()?
+                let windows: Vec<WindowInfo> = WindowInfo::all_windows()?
                     .into_iter()
                     .filter(|w| w.caption == *value)
                     .collect();

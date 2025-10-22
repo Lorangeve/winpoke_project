@@ -9,11 +9,12 @@ use crate::prelude::Result;
 use crate::window::active::{
     open_process, set_focus, set_foreground_window, show_window, wait_for_input_idle,
 };
+use crate::window::info::get_window_info;
 use crate::window::msg::{Message, send_message_seq};
 use crate::window::style::WindowStyle;
 use info::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct WindowInfo {
     /// 窗口句柄
     pub(crate) hwnd: HWND,
@@ -51,6 +52,11 @@ impl WindowInfo {
         self.hwnd
     }
 
+    /// 通过窗口句柄获取窗口信息
+    pub fn with_hwnd(hwnd: HWND) -> Result<Self> {
+        get_window_info(hwnd)
+    }
+
     /// 获取所有**顶层**窗口
     pub fn top_level_windows() -> Result<Vec<WindowInfo>> {
         let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
@@ -75,7 +81,7 @@ impl WindowInfo {
     }
 
     /// 获取一级子窗口
-    pub fn find_child_windows(&self) -> Result<Vec<WindowInfo>> {
+    pub fn child_windows(&self) -> Result<Vec<WindowInfo>> {
         let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)?
             .into_iter()
             .flat_map(get_window_info)
@@ -95,6 +101,25 @@ impl WindowInfo {
             .collect();
 
         Ok(infos)
+    }
+
+    /// 查找全部窗口（包含子窗口）
+    pub fn all_windows() -> Result<Vec<WindowInfo>> {
+        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()?
+            .into_iter()
+            .flat_map(WindowInfo::with_hwnd)
+            .collect();
+
+        let mut all_windows: Vec<WindowInfo> = top_windows.clone();
+
+        for window in top_windows {
+            let child_windows = window.child_windows()?;
+            all_windows.extend(child_windows);
+        }
+
+        dbg!(all_windows.clone());
+
+        Ok(all_windows)
     }
 
     /// 显示窗口
@@ -144,7 +169,7 @@ mod tests {
         let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit").unwrap();
         for window in windows {
             println!("Window: {:?}", window);
-            let children = window.find_child_windows().unwrap();
+            let children = window.child_windows().unwrap();
             for child in children {
                 println!("  Child: {:?}", child);
             }

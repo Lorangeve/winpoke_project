@@ -6,7 +6,7 @@ use windows::Win32::UI::WindowsAndMessaging::{WINDOW_EX_STYLE, WINDOW_STYLE, WS_
 
 use crate::window::style::map::STYLE_MAP;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct WindowStyle {
     pub style: WINDOW_STYLE,
     pub extend_style: WINDOW_EX_STYLE,

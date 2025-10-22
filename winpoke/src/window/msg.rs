@@ -182,7 +182,7 @@ mod tests {
         window.set_foreground_window()?;
 
         let tree_wnd = window
-            .find_child_windows()?
+            .child_windows()?
             .into_iter()
             .filter(|w| w.class_name == "SysTreeView32")
             .next()
