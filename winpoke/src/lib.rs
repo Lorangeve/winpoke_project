@@ -1,9 +1,13 @@
 // #![doc = include_str!("..\\README.md")]
 
 pub mod error;
-pub mod evaluate;
-pub(crate) mod parser;
 pub mod window;
+
+#[cfg(feature = "eval")]
+pub mod evaluate;
+
+#[cfg(feature = "parser")]
+pub mod parser;
 
 pub mod prelude {
     pub use crate::error::Error;
