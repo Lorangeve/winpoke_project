@@ -10,16 +10,14 @@ pub fn eval(s: &str) -> Result<()> {
     for command in commands.unwrap() {
         match &command.selector {
             Some(Selector::Class(value)) => {
-                let windows = dbg!(
-                    WindowInfo::all_windows()?
-                        .into_iter()
-                        .filter(|w| w.class_name == *value)
-                        .collect::<Vec<WindowInfo>>()
-                );
+                let windows = WindowInfo::all_windows()?
+                    .into_iter()
+                    .filter(|w| w.class_name == *value)
+                    .collect::<Vec<WindowInfo>>();
 
                 for window in windows {
-                    window.set_foreground_window()?;
-                    window.send_message_seq(&command.messages)?;
+                    // window.set_foreground_window()?;
+                    dbg!(window).send_message_seq(&command.messages)?;
                 }
                 continue;
             }
@@ -30,7 +28,7 @@ pub fn eval(s: &str) -> Result<()> {
                     .collect();
 
                 for window in windows {
-                    window.set_foreground_window()?;
+                    // window.set_foreground_window()?;
                     window.send_message_seq(&command.messages)?;
                 }
                 continue;
