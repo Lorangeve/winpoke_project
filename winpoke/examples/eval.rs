@@ -1,7 +1,7 @@
-#[cfg(feature = "parser")]
+#[cfg(feature = "eval")]
 use winpoke::evaluate::eval;
 
-#[cfg(feature = "parser")]
+#[cfg(feature = "eval")]
 fn main() {
     let script = std::env::args()
         .nth(1)
@@ -14,7 +14,7 @@ fn main() {
     }
 }
 
-#[cfg(not(feature = "parser"))]
+#[cfg(not(feature = "eval"))]
 fn main() {
-    panic!("请启用 parser 特性");
+    panic!("请启用 eval 特性");
 }
