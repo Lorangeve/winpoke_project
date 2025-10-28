@@ -6,6 +6,8 @@ use windows::Win32::UI::WindowsAndMessaging::{WINDOW_EX_STYLE, WINDOW_STYLE, WS_
 
 use crate::window::style::map::STYLE_MAP;
 
+/// 窗口样式
+/// 包含普通样式和扩展样式，可通过Display trait以字符串形式输出
 #[derive(Debug, Default, Clone)]
 pub struct WindowStyle {
     pub style: WINDOW_STYLE,

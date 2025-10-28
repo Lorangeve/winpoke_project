@@ -13,6 +13,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use windows::core::{BOOL, HSTRING};
 
 /// 安全枚举所有顶级窗口并返回窗口句柄列表
+/// error: [`EnumWindowsError`]
 pub(crate) fn enumerate_top_level_windows() -> Result<Vec<HWND>> {
     let mut hwnds = Vec::new();
 
@@ -20,7 +21,7 @@ pub(crate) fn enumerate_top_level_windows() -> Result<Vec<HWND>> {
     let lparam = LPARAM(NonNull::from_mut(&mut hwnds).as_ptr() as isize);
 
     // 调用Windows API枚举窗口（unsafe：与C API交互）
-    unsafe { EnumWindows(Some(enum_func), lparam) }.map_err(|_| Error::EnumWindowsError)?;
+    unsafe { EnumWindows(Some(enum_func), lparam) }.map_err(Error::EnumWindowsError)?;
 
     Ok(hwnds)
 }
@@ -39,9 +40,11 @@ extern "system" fn enum_func(hwnd: HWND, lparam: LPARAM) -> BOOL {
     BOOL(1) // 继续枚举
 }
 
+/// 枚举指定父窗口的一级子窗口
+/// error: [`FoundWindowError`]
 pub(crate) fn enum_child_window(parent: HWND) -> Result<Vec<HWND>> {
     let mut pre_child = unsafe { FindWindowExW(Some(parent), None, None, None) }
-        .map_err(|_| Error::NotFoundWindowError)?;
+        .map_err(Error::FoundWindowError)?;
     let mut child_windows = vec![pre_child];
 
     while let Ok(child) = unsafe { FindWindowExW(Some(parent), Some(pre_child), None, None) }
@@ -67,7 +70,7 @@ pub(crate) fn enum_child_window_with_class_name(
             None,
         )
     }
-    .map_err(|_| Error::NotFoundWindowError)?;
+    .map_err(Error::FoundWindowError)?;
     let mut child_windows = vec![pre_child];
 
     while let Ok(child) = unsafe { FindWindowExW(Some(parent), Some(pre_child), None, None) }

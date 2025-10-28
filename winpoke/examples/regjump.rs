@@ -13,7 +13,7 @@ use winpoke::{
 fn find_regedit() -> Result<WindowInfo> {
     let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit")?;
 
-    windows.into_iter().next().ok_or(Error::NotFoundWindowError)
+    Ok(windows.into_iter().next().expect("没有找到 regedit 窗口"))
 }
 
 fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
@@ -34,7 +34,7 @@ fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
             .find_child_windows_with_class_name("SysTreeView32")?
             .into_iter()
             .next()
-            .ok_or(Error::NotFoundWindowError)?
+            .expect("未找到 SysTreeView32")
     );
 
     #[allow(unused_must_use)]

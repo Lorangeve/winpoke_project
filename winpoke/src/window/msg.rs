@@ -172,23 +172,24 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::KEYEVENTF_KEYUP;
 
     use super::*;
-    use crate::{error::Error, prelude::Keyboard, window::WindowInfo};
+    use crate::{prelude::Keyboard, window::WindowInfo};
 
     #[test]
-    fn test_send_message() -> Result<()> {
+    fn test_send_message() {
         let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit") // "RegEdit_RegEdit"
             .expect("找不到指定窗口");
         let window = windows.into_iter().next().expect("没有窗口信息");
-        window.set_foreground_window()?;
+        window.set_foreground_window().expect("设置前台窗口失败");
 
         let tree_wnd = window
-            .child_windows()?
+            .child_windows()
+            .expect("枚举子窗口失败")
             .into_iter()
             .filter(|w| w.class_name == "SysTreeView32")
             .next()
-            .ok_or(Error::NotFoundWindowError)?;
+            .expect("没有找到子窗口");
 
-        tree_wnd.show_window()?;
+        tree_wnd.show_window().expect("显示窗口失败");
         // tree_wnd.set_focus()?;
 
         tree_wnd
@@ -216,8 +217,6 @@ mod tests {
                 },
             ]))
             .expect("发送消息失败");
-
-        Ok(())
     }
 
     #[test]

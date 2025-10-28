@@ -103,7 +103,6 @@ mod tests {
             .expect("枚举子窗口失败")
             .into_iter()
             .next()
-            .ok_or(Error::NotFoundWindowError)
             .expect("找不到子窗口");
 
         show_window(tree_wnd).expect("显示窗口失败");

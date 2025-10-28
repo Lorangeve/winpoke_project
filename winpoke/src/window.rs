@@ -43,6 +43,7 @@ pub struct WindowInfo {
     /// 窗口是否为活动窗口
     pub is_active: bool,
 
+    /// 窗口样式
     pub style: WindowStyle,
 }
 
@@ -81,6 +82,7 @@ impl WindowInfo {
     }
 
     /// 获取一级子窗口
+    /// error: [`FoundWindowError`]
     pub fn child_windows(&self) -> Result<Vec<WindowInfo>> {
         let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)?
             .into_iter()
@@ -105,19 +107,22 @@ impl WindowInfo {
 
     /// 查找全部窗口（包含子窗口）
     pub fn all_windows() -> Result<Vec<WindowInfo>> {
+        // 获取所有顶层窗口信息
         let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()?
             .into_iter()
             .flat_map(WindowInfo::with_hwnd)
             .collect();
 
-        let mut all_windows: Vec<WindowInfo> = top_windows.clone();
+        // 用于存储所有窗口信息
+        let mut all_windows: Vec<WindowInfo> = Vec::new();
 
-        for window in top_windows {
-            let child_windows = window.child_windows()?;
-            all_windows.extend(child_windows);
+        for window in &top_windows {
+            all_windows.push(window.clone());
+            // 尝试获取子窗口，失败则跳过
+            if let Ok(children) = window.child_windows() {
+                all_windows.extend(children);
+            }
         }
-
-        dbg!(all_windows.clone());
 
         Ok(all_windows)
     }
@@ -162,6 +167,22 @@ mod tests {
     #[allow(unused_must_use)]
     fn test_find_by_class_name() {
         dbg!(WindowInfo::find_by_class_name("RegEdit_RegEdit"));
+    }
+
+    #[test]
+    fn test_all_windows() {
+        let windows = WindowInfo::all_windows().expect("获取全部窗口失败");
+        for window in windows {
+            println!("Window: {:?}", window);
+        }
+    }
+
+    #[test]
+    fn test_top_level_windows() {
+        let windows = WindowInfo::top_level_windows().expect("获取顶层窗口失败");
+        for window in windows {
+            println!("Window: {:?}", window);
+        }
     }
 
     #[test]
@@ -211,7 +232,6 @@ mod tests {
         set_foreground_window(children.hwnd).expect("设置前台窗口失败");
         show_window(children.hwnd).expect("显示窗口失败");
         // child.set_focus().expect("设置焦点失败");
-        set_focus(children.hwnd).expect("设置焦点失败");
         // unsafe { SetFocus(Some(children.hwnd)) }
         //     .map_err(|e| Error::SetFocusFailed(e))
         //     .expect("设置焦点失败");
