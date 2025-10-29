@@ -59,18 +59,20 @@ impl WindowInfo {
     }
 
     /// 获取所有**顶层**窗口
-    pub fn top_level_windows() -> Result<Vec<WindowInfo>> {
-        let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
+    pub fn top_level_windows() -> Option<Vec<WindowInfo>> {
+        let infos: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
             .into_iter()
             .flat_map(get_window_info)
             .collect();
 
-        Ok(infos)
+        Some(infos)
     }
 
     /// 通过类名查找**顶层**窗口
-    pub fn find_by_class_name<T: AsRef<str>>(class_name: T) -> Result<Vec<Self>> {
-        let infos: Vec<WindowInfo> = enumerate_top_level_windows()?
+    pub fn find_by_class_name<T: AsRef<str>>(class_name: T) -> Option<Vec<Self>> {
+        let infos: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
             .into_iter()
             .filter(|&hwnd| {
                 get_window_class_name(hwnd).is_ok_and(|name| name == class_name.as_ref())
@@ -78,20 +80,21 @@ impl WindowInfo {
             .flat_map(get_window_info)
             .collect();
 
-        Ok(infos)
+        Some(infos)
     }
 
     /// 获取一级子窗口，按类名过滤
-    pub fn find_child_windows_with_class_name(
+    pub fn find_child_windows_by_class_name(
         &self,
         class_name: impl AsRef<str>,
-    ) -> Result<Vec<WindowInfo>> {
-        let infos: Vec<WindowInfo> = enum_child_window_with_class_name(self.hwnd, class_name)?
+    ) -> Option<Vec<WindowInfo>> {
+        let infos: Vec<WindowInfo> = enum_child_window_with_class_name(self.hwnd, class_name)
+            .ok()?
             .into_iter()
             .flat_map(get_window_info)
             .collect();
 
-        Ok(infos)
+        Some(infos)
     }
 
     /// 获取一级子窗口
@@ -205,7 +208,7 @@ mod tests {
         for window in windows {
             println!("Window: {:?}", window);
             let children = window
-                .find_child_windows_with_class_name("SysTreeView32")
+                .find_child_windows_by_class_name("SysTreeView32")
                 .unwrap();
             for child in children {
                 println!("  Child: {:?}", child);
@@ -224,7 +227,7 @@ mod tests {
         println!("Window: {:#?}", window);
 
         let children = window
-            .find_child_windows_with_class_name("SysTreeView32")
+            .find_child_windows_by_class_name("SysTreeView32")
             .expect("枚举子窗口失败")
             .into_iter()
             .next()
