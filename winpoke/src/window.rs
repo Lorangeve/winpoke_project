@@ -58,6 +58,29 @@ impl WindowInfo {
         get_window_info(hwnd)
     }
 
+    /// 查找全部窗口（包含顶级窗口及其一级子窗口）
+    pub fn all_windows() -> Option<Vec<WindowInfo>> {
+        // 获取所有顶层窗口信息
+        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
+            .into_iter()
+            .flat_map(WindowInfo::with_hwnd)
+            .collect();
+
+        // 用于存储所有窗口信息
+        let mut all_windows: Vec<WindowInfo> = Vec::new();
+
+        for window in &top_windows {
+            all_windows.push(window.clone());
+            // 尝试获取子窗口，失败则跳过
+            if let Some(children) = window.child_windows() {
+                all_windows.extend(children);
+            }
+        }
+
+        Some(all_windows)
+    }
+
     /// 获取所有**顶层**窗口
     pub fn top_level_windows() -> Option<Vec<WindowInfo>> {
         let infos: Vec<WindowInfo> = enumerate_top_level_windows()
@@ -83,6 +106,18 @@ impl WindowInfo {
         Some(infos)
     }
 
+    /// 通过标题查找**顶层**窗口
+    pub fn find_by_caption<T: AsRef<str>>(caption: T) -> Option<Vec<Self>> {
+        let infos: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
+            .into_iter()
+            .filter(|&hwnd| get_window_caption(hwnd).is_ok_and(|name| name == caption.as_ref()))
+            .flat_map(get_window_info)
+            .collect();
+
+        Some(infos)
+    }
+
     /// 获取一级子窗口，按类名过滤
     pub fn find_child_windows_by_class_name(
         &self,
@@ -91,18 +126,6 @@ impl WindowInfo {
         let infos: Vec<WindowInfo> = enum_child_window_with_class_name(self.hwnd, class_name)
             .ok()?
             .into_iter()
-            .flat_map(get_window_info)
-            .collect();
-
-        Some(infos)
-    }
-
-    /// 通过标题查找**顶层**窗口
-    pub fn find_by_caption<T: AsRef<str>>(caption: T) -> Option<Vec<Self>> {
-        let infos: Vec<WindowInfo> = enumerate_top_level_windows()
-            .ok()?
-            .into_iter()
-            .filter(|&hwnd| get_window_caption(hwnd).is_ok_and(|name| name == caption.as_ref()))
             .flat_map(get_window_info)
             .collect();
 
@@ -134,29 +157,6 @@ impl WindowInfo {
             .collect();
 
         Some(infos)
-    }
-
-    /// 查找全部窗口（包含子窗口）
-    pub fn all_windows() -> Option<Vec<WindowInfo>> {
-        // 获取所有顶层窗口信息
-        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()
-            .ok()?
-            .into_iter()
-            .flat_map(WindowInfo::with_hwnd)
-            .collect();
-
-        // 用于存储所有窗口信息
-        let mut all_windows: Vec<WindowInfo> = Vec::new();
-
-        for window in &top_windows {
-            all_windows.push(window.clone());
-            // 尝试获取子窗口，失败则跳过
-            if let Some(children) = window.child_windows() {
-                all_windows.extend(children);
-            }
-        }
-
-        Some(all_windows)
     }
 
     /// 显示窗口
