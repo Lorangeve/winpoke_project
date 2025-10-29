@@ -81,17 +81,6 @@ impl WindowInfo {
         Ok(infos)
     }
 
-    /// 获取一级子窗口
-    /// error: [`FoundWindowError`]
-    pub fn child_windows(&self) -> Result<Vec<WindowInfo>> {
-        let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)?
-            .into_iter()
-            .flat_map(get_window_info)
-            .collect();
-
-        Ok(infos)
-    }
-
     /// 获取一级子窗口，按类名过滤
     pub fn find_child_windows_with_class_name(
         &self,
@@ -105,10 +94,23 @@ impl WindowInfo {
         Ok(infos)
     }
 
+    /// 获取一级子窗口
+    /// error: [`FoundWindowError`]
+    pub fn child_windows(&self) -> Option<Vec<WindowInfo>> {
+        let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)
+            .ok()?
+            .into_iter()
+            .flat_map(get_window_info)
+            .collect();
+
+        Some(infos)
+    }
+
     /// 查找全部窗口（包含子窗口）
-    pub fn all_windows() -> Result<Vec<WindowInfo>> {
+    pub fn all_windows() -> Option<Vec<WindowInfo>> {
         // 获取所有顶层窗口信息
-        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()?
+        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
             .into_iter()
             .flat_map(WindowInfo::with_hwnd)
             .collect();
@@ -119,12 +121,12 @@ impl WindowInfo {
         for window in &top_windows {
             all_windows.push(window.clone());
             // 尝试获取子窗口，失败则跳过
-            if let Ok(children) = window.child_windows() {
+            if let Some(children) = window.child_windows() {
                 all_windows.extend(children);
             }
         }
 
-        Ok(all_windows)
+        Some(all_windows)
     }
 
     /// 显示窗口

@@ -44,7 +44,7 @@ extern "system" fn enum_func(hwnd: HWND, lparam: LPARAM) -> BOOL {
 /// error: [`FoundWindowError`]
 pub(crate) fn enum_child_window(parent: HWND) -> Result<Vec<HWND>> {
     let mut pre_child = unsafe { FindWindowExW(Some(parent), None, None, None) }
-        .map_err(Error::FoundWindowError)?;
+        .map_err(|_| Error::FoundWindowError)?;
     let mut child_windows = vec![pre_child];
 
     while let Ok(child) = unsafe { FindWindowExW(Some(parent), Some(pre_child), None, None) }
@@ -70,7 +70,7 @@ pub(crate) fn enum_child_window_with_class_name(
             None,
         )
     }
-    .map_err(Error::FoundWindowError)?;
+    .map_err(|_| Error::FoundWindowError)?;
     let mut child_windows = vec![pre_child];
 
     while let Ok(child) = unsafe { FindWindowExW(Some(parent), Some(pre_child), None, None) }

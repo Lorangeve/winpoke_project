@@ -6,7 +6,7 @@ pub enum Error {
     #[error("Windows API 调用失败: {0}")]
     WindowsError(#[from] core::Error),
     #[error("找不到指定窗口")]
-    FoundWindowError(core::Error),
+    FoundWindowError,
     #[error("显示窗口失败")]
     ShowWindowError,
     #[error("设置前台窗口失败")]
