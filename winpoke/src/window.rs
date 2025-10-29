@@ -58,6 +58,40 @@ impl WindowInfo {
         get_window_info(hwnd)
     }
 
+    /// 获取全部窗口信息（全部窗口及全部子窗口）
+    /// 注意：该方法会递归获取所有子窗口，可能会比较耗时
+    pub fn all_windows_recursive() -> Option<Vec<WindowInfo>> {
+        fn get_all_child_windows(hwnd: HWND, all_windows: &mut Vec<WindowInfo>) {
+            if let Some(childrens) = WindowInfo::with_hwnd(hwnd)
+                .expect("获取 WindowInfo 失败")
+                .child_windows()
+            {
+                for child in childrens {
+                    all_windows.push(child.clone());
+                    get_all_child_windows(child.hwnd, all_windows);
+                }
+            }
+        }
+
+        // 获取所有顶层窗口信息
+        let top_windows: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
+            .into_iter()
+            .flat_map(WindowInfo::with_hwnd)
+            .collect();
+
+        // 用于存储所有窗口信息
+        let mut all_windows: Vec<WindowInfo> = Vec::new();
+
+        for window in &top_windows {
+            all_windows.push(window.clone());
+            // 递归获取子窗口
+            get_all_child_windows(window.hwnd, &mut all_windows);
+        }
+
+        Some(all_windows)
+    }
+
     /// 查找全部窗口（包含顶级窗口及其一级子窗口）
     pub fn all_windows() -> Option<Vec<WindowInfo>> {
         // 获取所有顶层窗口信息
@@ -291,9 +325,14 @@ mod tests {
         println!("  Child: {:#?}", children);
         set_foreground_window(children.hwnd).expect("设置前台窗口失败");
         show_window(children.hwnd).expect("显示窗口失败");
-        // child.set_focus().expect("设置焦点失败");
-        // unsafe { SetFocus(Some(children.hwnd)) }
-        //     .map_err(|e| Error::SetFocusFailed(e))
-        //     .expect("设置焦点失败");
+        children.set_focus().expect("设置焦点失败");
+    }
+
+    #[test]
+    fn test_all_windows_recursive() {
+        let windows = WindowInfo::all_windows_recursive().expect("获取全部窗口失败");
+        for window in windows {
+            println!("Window: {:?}", window);
+        }
     }
 }
