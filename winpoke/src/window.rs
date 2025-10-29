@@ -97,6 +97,33 @@ impl WindowInfo {
         Some(infos)
     }
 
+    /// 通过标题查找**顶层**窗口
+    pub fn find_by_caption<T: AsRef<str>>(caption: T) -> Option<Vec<Self>> {
+        let infos: Vec<WindowInfo> = enumerate_top_level_windows()
+            .ok()?
+            .into_iter()
+            .filter(|&hwnd| get_window_caption(hwnd).is_ok_and(|name| name == caption.as_ref()))
+            .flat_map(get_window_info)
+            .collect();
+
+        Some(infos)
+    }
+
+    /// 获取一级子窗口，按标题过滤
+    pub fn find_child_windows_by_caption(
+        &self,
+        caption: impl AsRef<str>,
+    ) -> Option<Vec<WindowInfo>> {
+        let infos: Vec<WindowInfo> = enum_child_window(self.hwnd)
+            .ok()?
+            .into_iter()
+            .filter(|&hwnd| get_window_caption(hwnd).is_ok_and(|name| name == caption.as_ref()))
+            .flat_map(get_window_info)
+            .collect();
+
+        Some(infos)
+    }
+
     /// 获取一级子窗口
     /// error: [`FoundWindowError`]
     pub fn child_windows(&self) -> Option<Vec<WindowInfo>> {
