@@ -11,10 +11,8 @@ pub fn eval(s: &str) -> Result<()> {
     for command in commands.unwrap() {
         match &command.selector {
             Some(Selector::Class(value)) => {
-                let windows = WindowInfo::all_windows()
-                    .ok_or(Error::FoundWindowError)?
-                    .into_iter()
-                    .filter(|w| w.class_name == *value);
+                let windows =
+                    WindowInfo::find_all_by_class_name(value).ok_or(Error::FoundWindowError)?;
 
                 for window in windows {
                     // window.set_foreground_window()?;
@@ -23,11 +21,12 @@ pub fn eval(s: &str) -> Result<()> {
                 continue;
             }
             Some(Selector::Caption(value)) => {
-                let windows: Vec<WindowInfo> = WindowInfo::all_windows()
-                    .ok_or(Error::FoundWindowError)?
-                    .into_iter()
-                    .filter(|w| w.caption == *value)
-                    .collect();
+                let windows: Vec<WindowInfo> =
+                    WindowInfo::find_all_by_caption(value).ok_or(Error::FoundWindowError)?;
+
+                if windows.is_empty() {
+                    return Err(Error::FoundWindowError);
+                }
 
                 for window in windows {
                     // window.set_foreground_window()?;

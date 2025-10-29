@@ -118,6 +118,34 @@ impl WindowInfo {
         Some(infos)
     }
 
+    /// 通过标题查找全部窗口（包含顶层窗口及其一级子窗口）
+    pub fn find_all_by_caption<T: AsRef<str>>(caption: T) -> Option<Vec<Self>> {
+        let infos: Vec<WindowInfo> = WindowInfo::all_windows()?
+            .into_iter()
+            .filter(|w| w.caption == caption.as_ref())
+            .collect();
+
+        if infos.is_empty() {
+            return None;
+        }
+
+        Some(infos)
+    }
+
+    /// 通过类名查找全部窗口（包含顶层窗口及其一级子窗口）
+    pub fn find_all_by_class_name<T: AsRef<str>>(class_name: T) -> Option<Vec<Self>> {
+        let infos: Vec<WindowInfo> = WindowInfo::all_windows()?
+            .into_iter()
+            .filter(|w| w.class_name == class_name.as_ref())
+            .collect();
+
+        if infos.is_empty() {
+            return None;
+        }
+
+        Some(infos)
+    }
+
     /// 获取一级子窗口，按类名过滤
     pub fn find_child_windows_by_class_name(
         &self,
