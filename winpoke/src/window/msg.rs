@@ -246,14 +246,16 @@ mod tests {
     #[test]
     /// 移动鼠标到屏幕中心
     fn test_send_mouse_input() -> Result<()> {
-        use windows::Win32::UI::WindowsAndMessaging::GetSystemMetrics;
-        use windows::Win32::UI::WindowsAndMessaging::{SM_CXSCREEN, SM_CYSCREEN};
+        // use windows::Win32::UI::WindowsAndMessaging::GetSystemMetrics;
+        // use windows::Win32::UI::WindowsAndMessaging::{SM_CXSCREEN, SM_CYSCREEN};
 
-        let screen_width = unsafe { GetSystemMetrics(SM_CXSCREEN) };
-        let screen_height = unsafe { GetSystemMetrics(SM_CYSCREEN) };
+        // let screen_width = unsafe { GetSystemMetrics(SM_CXSCREEN) };
+        // let screen_height = unsafe { GetSystemMetrics(SM_CYSCREEN) };
 
-        let center_x = (screen_width / 2) * 65535 / screen_width;
-        let center_y = (screen_height / 2) * 65535 / screen_height;
+        // let center_x = (screen_width / 2) * 65535 / screen_width;
+        // let center_y = (screen_height / 2) * 65535 / screen_height;
+
+        let (center_x, center_y) = crate::monitor::info::get_monitor_center().unwrap();
 
         send_input_seq(&vec![InputMessage::Mouse {
             x: center_x,

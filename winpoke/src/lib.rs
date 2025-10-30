@@ -1,6 +1,7 @@
-// #![doc = include_str!("..\\README.md")]
+#![doc = include_str!("..\\README.md")]
 
 pub mod error;
+pub(crate) mod monitor;
 pub mod window;
 
 #[cfg(feature = "eval")]
