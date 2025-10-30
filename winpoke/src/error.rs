@@ -1,3 +1,5 @@
+//! 自定义错误类型，用于处理 Windows 窗口操作中的各种错误情况。
+//! 错误名均为「谓-宾」结构，以清晰表达错误的含义。
 use thiserror::Error;
 use windows::core;
 
