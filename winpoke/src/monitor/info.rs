@@ -34,12 +34,11 @@ fn enum_monitors() -> Result<Vec<MonitorInfo>> {
 extern "system" fn monitor_enum_proc(
     hmonitor: HMONITOR,
     hdc: HDC,
-    rect: *mut RECT,
+    _rect: *mut RECT,
     lparam: LPARAM,
 ) -> BOOL {
     dbg!(hmonitor);
     dbg!(hdc);
-    dbg!(RECT::from(unsafe { *rect }));
 
     let monitors = match NonNull::new(lparam.0 as *mut Vec<MonitorInfo>) {
         Some(ptr) => unsafe { &mut *ptr.as_ptr() },
@@ -77,6 +76,7 @@ extern "system" fn monitor_enum_proc(
     monitors.push(MonitorInfo {
         hmonitor,
         device_name,
+        number: monitors.len() + 1,
         rect: (
             rcMonitor.top,
             rcMonitor.right,
