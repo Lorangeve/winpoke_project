@@ -18,7 +18,7 @@ use windows::{
 };
 
 /// 枚举所有显示器
-fn enum_monitors() -> Result<Vec<MonitorInfo>> {
+pub fn enum_monitors() -> Result<Vec<MonitorInfo>> {
     let mut monitors = Vec::new();
 
     let lparam = LPARAM(NonNull::from_mut(&mut monitors).as_ptr() as _);
@@ -45,17 +45,23 @@ extern "system" fn monitor_enum_proc(
         None => return BOOL(0),
     };
 
-    let monitorinfo = MONITORINFO {
+    #[allow(non_snake_case)]
+    let monitorInfo = MONITORINFO {
         cbSize: std::mem::size_of::<MONITORINFOEXW>() as _,
         ..Default::default()
     };
 
     let monitorinfo_ex: *mut MONITORINFOEXW = &mut MONITORINFOEXW {
-        monitorInfo: monitorinfo,
+        monitorInfo,
         ..Default::default()
     };
 
     unsafe { GetMonitorInfoW(hmonitor, monitorinfo_ex as *mut _) }.expect("GetMonitorInfoW failed");
+
+    let MONITORINFOEXW {
+        monitorInfo: monitorinfo,
+        szDevice,
+    } = unsafe { &*monitorinfo_ex };
 
     let MONITORINFO {
         cbSize: _,
@@ -63,11 +69,6 @@ extern "system" fn monitor_enum_proc(
         rcWork: _,
         dwFlags: _,
     } = monitorinfo;
-
-    let MONITORINFOEXW {
-        monitorInfo: _,
-        szDevice,
-    } = unsafe { &*monitorinfo_ex };
 
     let device_name = String::from_utf16_lossy(szDevice)
         .trim_end_matches("\0")

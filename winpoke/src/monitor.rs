@@ -2,6 +2,8 @@ use windows::Win32::Graphics::Gdi::HMONITOR;
 
 pub(crate) mod info;
 
+use crate::prelude::Result;
+
 #[derive(Debug, Default)]
 pub struct MonitorInfo {
     pub(crate) hmonitor: HMONITOR,
@@ -17,10 +19,14 @@ impl MonitorInfo {
         todo!()
     }
 
-    pub fn is_primary(&self) -> bool {
-        let (_, r, b, _) = self.rect;
+    pub fn all_monitors() -> Result<Vec<MonitorInfo>> {
+        info::enum_monitors()
+    }
 
-        if r == 0 && b == 0 { true } else { false }
+    pub fn is_primary(&self) -> bool {
+        let (t, _, _, l) = self.rect;
+
+        if t == 0 && l == 0 { true } else { false }
     }
 }
 
@@ -33,5 +39,18 @@ mod tests {
         // let monitor_info = MonitorInfo::new();
         // dbg!(&monitor_info);
         // assert!(monitor_info.width > 0 && monitor_info.height > 0);
+    }
+
+    #[test]
+
+    fn test_is_primary() {
+        let monitors = MonitorInfo::all_monitors().unwrap();
+        for monitor in monitors {
+            if monitor.is_primary() {
+                println!("Primary monitor: {:?}", monitor);
+            } else {
+                println!("Secondary monitor: {:?}", monitor);
+            }
+        }
     }
 }
