@@ -6,7 +6,8 @@ use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, RECT},
         Graphics::Gdi::{
-            EnumDisplayMonitors, GetDC, GetDeviceCaps, HDC, HMONITOR, LOGPIXELSX, ReleaseDC,
+            EnumDisplayMonitors, GetDC, GetDeviceCaps, GetMonitorInfoW, HDC, HMONITOR, LOGPIXELSX,
+            MONITORINFO, MONITORINFOEXW, ReleaseDC,
         },
         UI::{
             HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI, MONITOR_DPI_TYPE},
@@ -45,8 +46,43 @@ extern "system" fn monitor_enum_proc(
         None => return BOOL(0),
     };
 
+    let monitorinfo = MONITORINFO {
+        cbSize: std::mem::size_of::<MONITORINFOEXW>() as _,
+        ..Default::default()
+    };
+
+    let monitorinfo_ex: *mut MONITORINFOEXW = &mut MONITORINFOEXW {
+        monitorInfo: monitorinfo,
+        ..Default::default()
+    };
+
+    unsafe { GetMonitorInfoW(hmonitor, monitorinfo_ex as *mut _) }.expect("GetMonitorInfoW failed");
+
+    let MONITORINFO {
+        cbSize: _,
+        rcMonitor,
+        rcWork: _,
+        dwFlags: _,
+    } = monitorinfo;
+
+    let MONITORINFOEXW {
+        monitorInfo: _,
+        szDevice,
+    } = unsafe { &*monitorinfo_ex };
+
+    let device_name = String::from_utf16_lossy(szDevice)
+        .trim_end_matches("\0")
+        .to_string();
+
     monitors.push(MonitorInfo {
         hmonitor,
+        device_name,
+        rect: (
+            rcMonitor.top,
+            rcMonitor.right,
+            rcMonitor.bottom,
+            rcMonitor.left,
+        ),
         ..Default::default()
     });
 

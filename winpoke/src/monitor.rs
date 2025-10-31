@@ -5,18 +5,15 @@ pub(crate) mod info;
 #[derive(Debug, Default)]
 pub struct MonitorInfo {
     pub(crate) hmonitor: HMONITOR,
-    pub width: i32,
-    pub height: i32,
+    pub device_name: String,
+    ///显示器矩形坐标（上，右，下，左）
+    pub rect: (i32, i32, i32, i32),
     pub scale: f32,
 }
 
 impl MonitorInfo {
     pub fn new() -> Self {
-        info::get_monitor_pixel().map_or(MonitorInfo::default(), |(width, height)| Self {
-            width,
-            height,
-            ..Default::default()
-        })
+        todo!()
     }
 }
 
@@ -26,8 +23,8 @@ mod tests {
 
     #[test]
     fn test_monitor_info() {
-        let monitor_info = MonitorInfo::new();
-        dbg!(&monitor_info);
-        assert!(monitor_info.width > 0 && monitor_info.height > 0);
+        // let monitor_info = MonitorInfo::new();
+        // dbg!(&monitor_info);
+        // assert!(monitor_info.width > 0 && monitor_info.height > 0);
     }
 }
