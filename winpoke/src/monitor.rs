@@ -1,4 +1,5 @@
-use windows::Win32::Graphics::Gdi::HMONITOR;
+use windows::Win32::Graphics::Gdi::DeleteDC;
+use windows::Win32::Graphics::Gdi::{HDC, HMONITOR};
 
 pub(crate) mod info;
 
@@ -7,6 +8,7 @@ use crate::prelude::Result;
 #[derive(Debug, Default)]
 pub struct MonitorInfo {
     pub(crate) hmonitor: HMONITOR,
+    pub(crate) hdc: HDC,
     pub number: usize,
     pub device_name: String,
     ///显示器矩形坐标（上，右，下，左）
@@ -15,10 +17,6 @@ pub struct MonitorInfo {
 }
 
 impl MonitorInfo {
-    pub fn new() -> Self {
-        todo!()
-    }
-
     pub fn all_monitors() -> Result<Vec<MonitorInfo>> {
         info::enum_monitors()
     }
@@ -27,6 +25,20 @@ impl MonitorInfo {
         let (t, _, _, l) = self.rect;
 
         if t == 0 && l == 0 { true } else { false }
+    }
+
+    pub fn count() -> i32 {
+        info::get_monitor_count()
+    }
+}
+
+impl Drop for MonitorInfo {
+    fn drop(&mut self) {
+        unsafe {
+            if !self.hdc.is_invalid() {
+                let _ = DeleteDC(self.hdc);
+            }
+        }
     }
 }
 
