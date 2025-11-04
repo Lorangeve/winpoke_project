@@ -36,7 +36,7 @@ impl Drop for MonitorInfo {
     fn drop(&mut self) {
         unsafe {
             if !self.hdc.is_invalid() {
-                let _ = DeleteDC(self.hdc);
+                DeleteDC(self.hdc).expect("HDC 无法释放");
             }
         }
     }
