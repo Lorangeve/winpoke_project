@@ -11,9 +11,10 @@ use winpoke::{
 };
 
 fn find_regedit() -> Result<WindowInfo> {
-    let windows = WindowInfo::find_by_class_name("RegEdit_RegEdit")?;
+    let windows =
+        WindowInfo::find_by_class_name("RegEdit_RegEdit").ok_or(Error::FoundWindowError)?;
 
-    windows.into_iter().next().ok_or(Error::WindowNotFound)
+    Ok(windows.into_iter().next().expect("没有找到 regedit 窗口"))
 }
 
 fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
@@ -29,17 +30,20 @@ fn active_regedit_by_path(target_path: impl AsRef<str>) -> Result<()> {
 
     println!("找到 regedit.exe 窗口: \n{:?}", window);
 
-    let tree_wnd = window
-        .find_child_windows_with_class_name("SysTreeView32")?
-        .into_iter()
-        .next()
-        .ok_or(Error::WindowNotFound)?;
+    let tree_wnd = dbg!(
+        window
+            .find_child_windows_by_class_name("SysTreeView32")
+            .ok_or(Error::FoundWindowError)?
+            .into_iter()
+            .next()
+            .expect("未找到 SysTreeView32")
+    );
 
     #[allow(unused_must_use)]
     tree_wnd.set_foreground_window()?;
     // tree_wnd.set_focus();
 
-    window.send_message_seq(vec![
+    window.send_message_seq(&vec![
         Message {
             // 0x10288 是 regedit 的“定位到地址栏”命令（WM_COMMAND, ID_EDIT_JUMPTOADDRESSBAR）x10288),
             msg: WindowMessage::Command(0x10288),
