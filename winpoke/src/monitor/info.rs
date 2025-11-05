@@ -2,7 +2,7 @@ use std::ptr::NonNull;
 
 use crate::{monitor::MonitorInfo, prelude::Result};
 
-use windows::Win32::Foundation::{HWND, LPARAM, RECT};
+use windows::Win32::Foundation::{LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
     CreateDCW, EnumDisplayMonitors, GetDC, GetDeviceCaps, GetMonitorInfoW, HDC, HMONITOR,
     LOGPIXELSX, LOGPIXELSY, MONITORINFO, MONITORINFOEXW, ReleaseDC,
@@ -88,13 +88,15 @@ extern "system" fn monitor_enum_proc(
 
 /// 获取指定显示器的DPI
 pub(crate) fn get_dpi_for_monitor(monitor: &MonitorInfo) -> Result<(u32, u32)> {
-    // let mut dpix = 0u32;
-    // let mut dpiy = 0u32;
+    let mut dpix = 0u32;
+    let mut dpiy = 0u32;
 
-    // unsafe { GetDpiForMonitor(hmonitor, MDT_EFFECTIVE_DPI, &mut dpix, &mut dpiy)? };
-
-    let dpix = unsafe { GetDeviceCaps(Some(monitor.hdc), LOGPIXELSX) };
-    let dpiy = unsafe { GetDeviceCaps(Some(monitor.hdc), LOGPIXELSY) };
+    if cfg!(feature = "compatible") {
+        dpix = unsafe { GetDeviceCaps(Some(monitor.hdc), LOGPIXELSX) } as _;
+        dpiy = unsafe { GetDeviceCaps(Some(monitor.hdc), LOGPIXELSY) } as _;
+    } else {
+        unsafe { GetDpiForMonitor(monitor.hmonitor, MDT_EFFECTIVE_DPI, &mut dpix, &mut dpiy)? };
+    }
 
     Ok((dpix as u32, dpiy as u32))
 }
@@ -117,30 +119,7 @@ pub(crate) fn get_monitor_count() -> i32 {
     unsafe { GetSystemMetrics(SM_CMONITORS) }
 }
 
-/// 获取主显示器的DPI
-fn get_primary_screen_dpi() -> Result<f32> {
-    let dpi = unsafe {
-        let hwnd = HWND::default();
-        let hdc = GetDC(Some(hwnd));
-        let dpi = GetDeviceCaps(Some(hdc), LOGPIXELSX);
-        ReleaseDC(Some(hwnd), hdc);
-        dpi
-    };
-
-    let x = unsafe {
-        let mut x: u32 = 0;
-        let mut y: u32 = 0;
-
-        GetDpiForMonitor(HMONITOR::default(), MDT_EFFECTIVE_DPI, &mut x, &mut y)?;
-
-        x
-    };
-
-    Ok(x as f32 / dpi as f32 * 100.0)
-}
-
 #[cfg(test)]
-
 mod tests {
     use super::*;
 
@@ -166,13 +145,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_primary_screen_dpi() {
-        let dpi = get_primary_screen_dpi().unwrap();
-        println!("Primary screen DPI: {}", dpi);
-        assert!(dpi > 0.0);
-    }
-
-    #[test]
     fn test_enum_display_monitors() {
         let _ = dbg!(enum_monitors());
     }
@@ -182,7 +154,7 @@ mod tests {
         let monitors = dbg!(enum_monitors()).expect("枚举显示器错误");
 
         monitors.iter().for_each(|mo| {
-            let (dpix, dpiy) = dbg!(get_dpi_for_monitor(mo)).expect("");
+            let (dpix, dpiy) = dbg!(get_dpi_for_monitor(mo)).expect("获取显示器 DPI 错误");
 
             assert!(dpix != 0 && dpiy != 0);
         });
