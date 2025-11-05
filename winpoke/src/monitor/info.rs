@@ -8,9 +8,7 @@ use windows::Win32::Graphics::Gdi::{
     LOGPIXELSY, MONITORINFO, MONITORINFOEXW,
 };
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
-use windows::Win32::UI::WindowsAndMessaging::{
-    GetSystemMetrics, SM_CMONITORS, SM_CXSCREEN, SM_CYSCREEN,
-};
+use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CMONITORS};
 use windows::core::{BOOL, HSTRING};
 
 /// 枚举所有显示器
@@ -31,8 +29,6 @@ extern "system" fn monitor_enum_proc(
     _rect: *mut RECT,
     lparam: LPARAM,
 ) -> BOOL {
-    dbg!(hmonitor);
-
     let monitors = match NonNull::new(lparam.0 as *mut Vec<MonitorInfo>) {
         Some(ptr) => unsafe { &mut *ptr.as_ptr() },
         None => return BOOL(0),
@@ -106,6 +102,20 @@ pub(crate) fn get_monitor_count() -> i32 {
     unsafe { GetSystemMetrics(SM_CMONITORS) }
 }
 
+pub(crate) fn monitor_from_point(x: i32, y: i32) -> Result<MonitorInfo> {
+    let monitors = enum_monitors()?;
+
+    for monitor in monitors {
+        let (top, right, bottom, left) = monitor.rect;
+
+        if x >= left && x <= right && y >= top && y <= bottom {
+            return Ok(monitor);
+        }
+    }
+
+    Err(crate::prelude::Error::NotFoundMonitor)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,7 +137,7 @@ mod tests {
         let monitors = dbg!(enum_monitors()).expect("枚举显示器错误");
 
         monitors.iter().for_each(|mo| {
-            let (dpix, dpiy) = dbg!(get_dpi_for_monitor(mo)).expect("获取显示器 DPI 错误");
+            let (dpix, dpiy) = get_dpi_for_monitor(mo).expect("获取显示器 DPI 错误");
 
             assert!(dpix != 0 && dpiy != 0);
         });

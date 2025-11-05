@@ -3,6 +3,7 @@ use windows::Win32::Graphics::Gdi::{HDC, HMONITOR};
 
 pub(crate) mod info;
 
+use crate::cursor;
 use crate::prelude::Result;
 
 #[derive(Debug, Default)]
@@ -26,6 +27,11 @@ impl MonitorInfo {
         let (t, _, _, l) = self.rect;
 
         if t == 0 && l == 0 { true } else { false }
+    }
+
+    pub fn current_monitor(&self) -> Result<MonitorInfo> {
+        let (cx, cy) = cursor::info::get_cursor_pos()?;
+        info::monitor_from_point(cx, cy)
     }
 
     pub fn primary_monitor() -> Result<MonitorInfo> {

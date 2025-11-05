@@ -9,6 +9,7 @@ pub mod evaluate;
 
 #[cfg(feature = "parser")]
 pub mod parser;
+mod cursor;
 
 pub mod prelude {
     pub use crate::error::Error;
