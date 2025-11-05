@@ -12,6 +12,7 @@
 | 发送窗口消息         | `window`<br />`crate::window::msg`    | *src/window/msg.rs*    | *prelude::\** |  🚧   |
 | 获取窗口消息         | `window`<br />`crate::window::msg`    | *src/window/msg.rs*    | *prelude::\** |  ❌   |
 | 激活窗口             | `window`<br />`crate::window::active` | *src/window/active.rs* | *prelude::\** |  🚧   |
+| 获取屏幕信息         | `monitor`<br />`crate::monitor::info` | *src/monitor/info.rs*  |               |  🚧   |
 | 启动进程并获取主窗口 | `window`<br />`crate::window::active` | *src/window/active.rs* | *prelude::\** |  ❌   |
 | 解析命令             | `window::parser`                      | *src/parser.rs*        | *parser*      |  🚧   |
 | 解析并执行命令       | `window::evaluate`                    | *src/evaluate.rs*      | *eval*        |  🚧   |
