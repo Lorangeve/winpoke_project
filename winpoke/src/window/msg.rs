@@ -255,7 +255,8 @@ mod tests {
         // let center_x = (screen_width / 2) * 65535 / screen_width;
         // let center_y = (screen_height / 2) * 65535 / screen_height;
 
-        let (center_x, center_y) = crate::monitor::info::get_monitor_center().unwrap();
+        let (center_x, center_y) =
+            dbg!(crate::monitor::MonitorInfo::primary_monitor()?.center_point());
 
         send_input_seq(&vec![InputMessage::Mouse {
             x: center_x,

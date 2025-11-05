@@ -19,4 +19,6 @@ pub enum Error {
     GetWindowInfoError,
     #[error("枚举窗口失败")]
     EnumWindowsError(core::Error),
+    #[error("找不到指定显示器")]
+    NotFoundMonitor,
 }

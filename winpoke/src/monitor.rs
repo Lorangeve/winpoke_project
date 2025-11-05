@@ -28,6 +28,16 @@ impl MonitorInfo {
         if t == 0 && l == 0 { true } else { false }
     }
 
+    pub fn primary_monitor() -> Result<MonitorInfo> {
+        let monitors = info::enum_monitors()?;
+        for monitor in monitors {
+            if monitor.is_primary() {
+                return Ok(monitor);
+            }
+        }
+        Err(crate::prelude::Error::NotFoundMonitor)
+    }
+
     /// 获取显示器宽度，单位：像素
     pub fn width(&self) -> u32 {
         let (_, r, _, l) = self.rect;
@@ -59,6 +69,14 @@ impl MonitorInfo {
         let scale_y = dpiy as f32 / 96.0;
 
         Ok((scale_x, scale_y))
+    }
+
+    /// 获取显示器中心点坐标
+    pub fn center_point(&self) -> (i32, i32) {
+        let (t, r, b, l) = self.rect;
+        let center_x = (l + r) / 2;
+        let center_y = (t + b) / 2;
+        (center_x, center_y)
     }
 
     /// 获取系统显示器数量
@@ -111,6 +129,18 @@ mod tests {
                 monitor.number, width, height
             );
             assert!(width > 0 && height > 0);
+        }
+    }
+
+    #[test]
+    fn test_center_point() {
+        let monitors = MonitorInfo::all_monitors().unwrap();
+        for monitor in monitors {
+            let (center_x, center_y) = monitor.center_point();
+            println!(
+                "Monitor {} center point: ({}, {})",
+                monitor.number, center_x, center_y
+            );
         }
     }
 }

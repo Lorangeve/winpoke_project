@@ -101,19 +101,6 @@ pub(crate) fn get_dpi_for_monitor(monitor: &MonitorInfo) -> Result<(u32, u32)> {
     Ok((dpix as u32, dpiy as u32))
 }
 
-/// 获取当前显视器的像素数
-pub(crate) fn get_monitor_pixel() -> Option<(i32, i32)> {
-    let screen_x = unsafe { GetSystemMetrics(SM_CXSCREEN) };
-    let screen_y = unsafe { GetSystemMetrics(SM_CYSCREEN) };
-
-    Some((screen_x, screen_y))
-}
-
-/// 当前显示器的中间点坐标
-pub(crate) fn get_monitor_center() -> Option<(i32, i32)> {
-    get_monitor_pixel().map(|(x, y)| (x / 2, y / 2))
-}
-
 /// 获取当前系统的显示器数量
 pub(crate) fn get_monitor_count() -> i32 {
     unsafe { GetSystemMetrics(SM_CMONITORS) }
@@ -122,20 +109,6 @@ pub(crate) fn get_monitor_count() -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_get_monitor_pixel() {
-        let (x, y) = get_monitor_pixel().unwrap();
-        println!("Monitor pixel: {} x {}", x, y);
-        assert!(x > 0 && y > 0);
-    }
-
-    #[test]
-    fn test_get_monitor_center() {
-        let (x, y) = get_monitor_center().unwrap();
-        println!("Monitor center: {} , {}", x, y);
-        assert!(x > 0 && y > 0);
-    }
 
     #[test]
     fn test_get_monitor_count() {
