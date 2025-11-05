@@ -4,8 +4,8 @@ use crate::{monitor::MonitorInfo, prelude::Result};
 
 use windows::Win32::Foundation::{LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
-    CreateDCW, EnumDisplayMonitors, GetDC, GetDeviceCaps, GetMonitorInfoW, HDC, HMONITOR,
-    LOGPIXELSX, LOGPIXELSY, MONITORINFO, MONITORINFOEXW, ReleaseDC,
+    CreateDCW, EnumDisplayMonitors, GetDeviceCaps, GetMonitorInfoW, HDC, HMONITOR, LOGPIXELSX,
+    LOGPIXELSY, MONITORINFO, MONITORINFOEXW,
 };
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
 use windows::Win32::UI::WindowsAndMessaging::{

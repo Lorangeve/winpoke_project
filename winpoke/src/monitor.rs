@@ -29,15 +29,19 @@ impl MonitorInfo {
     }
 
     /// 获取显示器宽度，单位：像素
-    pub fn width(&self) -> i32 {
+    pub fn width(&self) -> u32 {
         let (_, r, _, l) = self.rect;
-        r - l
+        ((r - l) as f32 / self.scale_factor().unwrap_or((1.0, 1.0)).0)
+            .ceil()
+            .abs() as _
     }
 
     /// 获取显示器高度，单位：像素
-    pub fn height(&self) -> i32 {
+    pub fn height(&self) -> u32 {
         let (t, _, b, _) = self.rect;
-        b - t
+        ((t - b) as f32 / self.scale_factor().unwrap_or((1.0, 1.0)).1)
+            .ceil()
+            .abs() as _
     }
 
     /// 获取显示器DPI，单位：每英寸点数
@@ -90,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scale_factor() {
+    fn test_scale_factor_and_width_height() {
         let monitors = MonitorInfo::all_monitors().unwrap();
         for monitor in monitors {
             let (scale_x, scale_y) = monitor.scale_factor().unwrap();
@@ -99,6 +103,14 @@ mod tests {
                 monitor.number, scale_x, scale_y
             );
             assert!(scale_x > 0.0 && scale_y > 0.0);
+
+            let width = monitor.width();
+            let height = monitor.height();
+            println!(
+                "Monitor {} dimensions: {} x {}",
+                monitor.number, width, height
+            );
+            assert!(width > 0 && height > 0);
         }
     }
 }
