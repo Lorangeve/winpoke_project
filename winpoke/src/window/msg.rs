@@ -4,7 +4,8 @@ pub mod mouse;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT,
-    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_MOVE, MOUSEINPUT, VIRTUAL_KEY,
+    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
+    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{MOUSEEVENTF_ABSOLUTE, SendInput};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -60,8 +61,9 @@ pub enum InputMessage {
 pub enum InputMouseMessage {
     Move(i32, i32),
     MoveTo(i32, i32),
-    LeftClick(i32, i32),
-    RightClick(i32, i32),
+    LeftClick,
+    RightClick,
+    WheelScroll(i32),
 }
 
 pub(crate) fn send_message(
@@ -167,20 +169,56 @@ pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
                         },
                     },
                 },
-                InputMouseMessage::LeftClick(x, y) => INPUT {
+                InputMouseMessage::LeftClick => {
+                    inputs.push(INPUT {
+                        r#type: INPUT_MOUSE,
+                        Anonymous: INPUT_0 {
+                            mi: MOUSEINPUT {
+                                dwFlags: MOUSEEVENTF_LEFTDOWN,
+                                ..Default::default()
+                            },
+                        },
+                    });
+                    INPUT {
+                        r#type: INPUT_MOUSE,
+                        Anonymous: INPUT_0 {
+                            mi: MOUSEINPUT {
+                                dwFlags: MOUSEEVENTF_LEFTUP,
+                                ..Default::default()
+                            },
+                        },
+                    }
+                }
+                InputMouseMessage::RightClick => {
+                    inputs.push(INPUT {
+                        r#type: INPUT_MOUSE,
+                        Anonymous: INPUT_0 {
+                            mi: MOUSEINPUT {
+                                dwFlags: MOUSEEVENTF_RIGHTDOWN,
+                                ..Default::default()
+                            },
+                        },
+                    });
+                    INPUT {
+                        r#type: INPUT_MOUSE,
+                        Anonymous: INPUT_0 {
+                            mi: MOUSEINPUT {
+                                dwFlags: MOUSEEVENTF_RIGHTUP,
+                                ..Default::default()
+                            },
+                        },
+                    }
+                }
+                InputMouseMessage::WheelScroll(r) => INPUT {
                     r#type: INPUT_MOUSE,
                     Anonymous: INPUT_0 {
                         mi: MOUSEINPUT {
-                            dx: *x,
-                            dy: *y,
-                            mouseData: 0,
-                            dwFlags: MOUSEEVENTF_LEFTDOWN,
-                            time: 0,
-                            dwExtraInfo: 0,
+                            mouseData: *r as _,
+                            dwFlags: MOUSEEVENTF_WHEEL,
+                            ..Default::default()
                         },
                     },
                 },
-                InputMouseMessage::RightClick(_, _) => todo!(),
             },
             InputMessage::Keyboard { key, flag } => INPUT {
                 r#type: INPUT_KEYBOARD,
@@ -283,8 +321,14 @@ mod tests {
         send_input_seq(&vec![
             // 移动鼠标到屏幕中心
             InputMessage::Mouse(InputMouseMessage::MoveTo(65535 / 2, 65535 / 2)),
+            //右键单击
+            InputMessage::Mouse(InputMouseMessage::RightClick),
             // 相对于当前位置移动鼠标
-            InputMessage::Mouse(InputMouseMessage::Move(65535 / 2, -65535 / 2)),
+            InputMessage::Mouse(InputMouseMessage::Move(10, 10)),
+            // 左键单击
+            InputMessage::Mouse(InputMouseMessage::LeftClick),
+            // 滚动鼠标滚轮
+            InputMessage::Mouse(InputMouseMessage::WheelScroll(-120)),
         ])?;
 
         Ok(())
