@@ -88,7 +88,7 @@ impl MonitorInfo {
         (normalized_x, normalized_y)
     }
 
-    /// 获取显示器绝对坐标缩放系数
+    /// 获取显示器绝对坐标系数
     /// 返回值为 (factor_width, factor_height)
     pub fn absolute_factor(&self) -> (f32, f32) {
         let factor_width = 65535.0 / self.width() as f32;

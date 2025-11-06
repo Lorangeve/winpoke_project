@@ -3,8 +3,8 @@ pub mod mouse;
 
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT, MOUSEEVENTF_MOVE,
-    MOUSEINPUT, VIRTUAL_KEY,
+    INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT,
+    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_MOVE, MOUSEINPUT, VIRTUAL_KEY,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{MOUSEEVENTF_ABSOLUTE, SendInput};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -52,8 +52,16 @@ pub type InputSequence = Vec<InputMessage>;
 
 #[derive(Debug)]
 pub enum InputMessage {
-    Mouse { x: i32, y: i32 },
+    Mouse(InputMouseMessage),
     Keyboard { key: u32, flag: Option<u32> },
+}
+
+#[derive(Debug)]
+pub enum InputMouseMessage {
+    Move(i32, i32),
+    MoveTo(i32, i32),
+    LeftClick(i32, i32),
+    RightClick(i32, i32),
 }
 
 pub(crate) fn send_message(
@@ -131,9 +139,22 @@ pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
     let mut inputs: Vec<INPUT> = Vec::new();
 
     for input in input_seq {
-        match input {
-            InputMessage::Mouse { x, y } => {
-                inputs.push(INPUT {
+        let input = match input {
+            InputMessage::Mouse(mouse_operate) => match mouse_operate {
+                InputMouseMessage::Move(x, y) => INPUT {
+                    r#type: INPUT_MOUSE,
+                    Anonymous: INPUT_0 {
+                        mi: MOUSEINPUT {
+                            dx: *x,
+                            dy: *y,
+                            mouseData: 0,
+                            dwFlags: MOUSEEVENTF_MOVE,
+                            time: 0,
+                            dwExtraInfo: 0,
+                        },
+                    },
+                },
+                InputMouseMessage::MoveTo(x, y) => INPUT {
                     r#type: INPUT_MOUSE,
                     Anonymous: INPUT_0 {
                         mi: MOUSEINPUT {
@@ -145,21 +166,35 @@ pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
                             dwExtraInfo: 0,
                         },
                     },
-                });
-            }
-            InputMessage::Keyboard { key, flag } => {
-                inputs.push(INPUT {
-                    r#type: INPUT_KEYBOARD,
+                },
+                InputMouseMessage::LeftClick(x, y) => INPUT {
+                    r#type: INPUT_MOUSE,
                     Anonymous: INPUT_0 {
-                        ki: KEYBDINPUT {
-                            wVk: VIRTUAL_KEY(*key as _),
-                            dwFlags: KEYBD_EVENT_FLAGS(flag.unwrap_or_default()),
-                            ..Default::default()
+                        mi: MOUSEINPUT {
+                            dx: *x,
+                            dy: *y,
+                            mouseData: 0,
+                            dwFlags: MOUSEEVENTF_LEFTDOWN,
+                            time: 0,
+                            dwExtraInfo: 0,
                         },
                     },
-                });
-            }
-        }
+                },
+                InputMouseMessage::RightClick(_, _) => todo!(),
+            },
+            InputMessage::Keyboard { key, flag } => INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VIRTUAL_KEY(*key as _),
+                        dwFlags: KEYBD_EVENT_FLAGS(flag.unwrap_or_default()),
+                        ..Default::default()
+                    },
+                },
+            },
+        };
+
+        inputs.push(input);
     }
 
     unsafe { SendInput(inputs.as_ref(), cbsize as _) };
@@ -244,21 +279,13 @@ mod tests {
     }
 
     #[test]
-    /// 移动鼠标到屏幕中心
     fn test_send_mouse_input() -> Result<()> {
-        // use windows::Win32::UI::WindowsAndMessaging::GetSystemMetrics;
-        // use Windows::Win32::UI::WindowsAndMessaging::{SM_CXSCREEN, SM_CYSCREEN};
-
-        // let screen_width = unsafe { GetSystemMetrics(SM_CXSCREEN) };
-        // let screen_height = unsafe { GetSystemMetrics(SM_CYSCREEN) };
-
-        // let center_x = (screen_width / 2) * 65535 / screen_width;
-        // let center_y = (screen_height / 2) * 65535 / screen_height;
-
-        send_input_seq(&vec![InputMessage::Mouse {
-            x: 65535 / 2,
-            y: 65536 / 2,
-        }])?;
+        send_input_seq(&vec![
+            // 移动鼠标到屏幕中心
+            InputMessage::Mouse(InputMouseMessage::MoveTo(65535 / 2, 65535 / 2)),
+            // 相对于当前位置移动鼠标
+            InputMessage::Mouse(InputMouseMessage::Move(65535 / 2, -65535 / 2)),
+        ])?;
 
         Ok(())
     }
