@@ -1,4 +1,4 @@
-use windows::Win32::Graphics::Gdi::{DPtoLP, DeleteDC};
+use windows::Win32::Graphics::Gdi::DeleteDC;
 use windows::Win32::Graphics::Gdi::{HDC, HMONITOR};
 
 pub(crate) mod info;
@@ -14,13 +14,6 @@ pub struct MonitorInfo {
     pub device_name: String,
     ///显示器矩形坐标（上，右，下，左）
     pub rect: (i32, i32, i32, i32),
-}
-
-pub struct VirtualScreenInfo {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
 }
 
 impl MonitorInfo {
@@ -95,6 +88,15 @@ impl MonitorInfo {
         (normalized_x, normalized_y)
     }
 
+    /// 获取显示器绝对坐标缩放系数
+    /// 返回值为 (factor_width, factor_height)
+    pub fn absolute_factor(&self) -> (f32, f32) {
+        let factor_width = 65535.0 / self.width() as f32;
+        let factor_height = 65535.0 / self.height() as f32;
+
+        (factor_width, factor_height)
+    }
+
     /// 获取显示器中心点坐标
     pub fn center_point(&self) -> (i32, i32) {
         let (t, r, b, l) = self.rect;
@@ -116,6 +118,19 @@ impl Drop for MonitorInfo {
                 DeleteDC(self.hdc).expect("HDC 无法释放");
             }
         }
+    }
+}
+
+pub struct VirtualScreenInfo {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+impl VirtualScreenInfo {
+    pub fn new() -> Self {
+        info::get_virtual_screen()
     }
 }
 
