@@ -1,5 +1,6 @@
 use std::ptr::NonNull;
 
+use crate::monitor::VirtualScreenInfo;
 use crate::{monitor::MonitorInfo, prelude::Result};
 
 use windows::Win32::Foundation::{LPARAM, RECT};
@@ -8,7 +9,10 @@ use windows::Win32::Graphics::Gdi::{
     LOGPIXELSY, MONITORINFO, MONITORINFOEXW,
 };
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
-use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CMONITORS};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetSystemMetrics, SM_CMONITORS, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+    SM_YVIRTUALSCREEN,
+};
 use windows::core::{BOOL, HSTRING};
 
 /// 枚举所有显示器
@@ -69,7 +73,7 @@ extern "system" fn monitor_enum_proc(
         hmonitor,
         hdc,
         device_name,
-        number: monitors.len() + 1,
+        number: (monitors.len() + 1) as _,
         rect: (
             rcMonitor.top,
             rcMonitor.right,
@@ -116,6 +120,15 @@ pub(crate) fn monitor_from_point(x: i32, y: i32) -> Result<MonitorInfo> {
     Err(crate::prelude::Error::NotFoundMonitor)
 }
 
+pub(crate) fn get_virtual_screen() -> VirtualScreenInfo {
+    VirtualScreenInfo {
+        x: unsafe { GetSystemMetrics(SM_XVIRTUALSCREEN) },
+        y: unsafe { GetSystemMetrics(SM_YVIRTUALSCREEN) },
+        width: unsafe { GetSystemMetrics(SM_CXVIRTUALSCREEN) },
+        height: unsafe { GetSystemMetrics(SM_CYVIRTUALSCREEN) },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,5 +154,10 @@ mod tests {
 
             assert!(dpix != 0 && dpiy != 0);
         });
+    }
+
+    #[test]
+    fn test_get_virtual_screen() {
+        get_virtual_screen();
     }
 }

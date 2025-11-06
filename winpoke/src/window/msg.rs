@@ -2,11 +2,11 @@ pub mod keyboard;
 pub mod mouse;
 
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::UI::Input::KeyboardAndMouse::SendInput;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT, MOUSEEVENTF_MOVE,
     MOUSEINPUT, VIRTUAL_KEY,
 };
+use windows::Win32::UI::Input::KeyboardAndMouse::{MOUSEEVENTF_ABSOLUTE, SendInput};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorPos, SendMessageW, WM_CHAR, WM_COMMAND, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN,
     WM_LBUTTONUP, WM_MOUSEMOVE,
@@ -140,7 +140,7 @@ pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
                             dx: *x,
                             dy: *y,
                             mouseData: 0,
-                            dwFlags: MOUSEEVENTF_MOVE,
+                            dwFlags: MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
                             time: 0,
                             dwExtraInfo: 0,
                         },
@@ -247,7 +247,7 @@ mod tests {
     /// 移动鼠标到屏幕中心
     fn test_send_mouse_input() -> Result<()> {
         // use windows::Win32::UI::WindowsAndMessaging::GetSystemMetrics;
-        // use windows::Win32::UI::WindowsAndMessaging::{SM_CXSCREEN, SM_CYSCREEN};
+        // use Windows::Win32::UI::WindowsAndMessaging::{SM_CXSCREEN, SM_CYSCREEN};
 
         // let screen_width = unsafe { GetSystemMetrics(SM_CXSCREEN) };
         // let screen_height = unsafe { GetSystemMetrics(SM_CYSCREEN) };
@@ -255,12 +255,9 @@ mod tests {
         // let center_x = (screen_width / 2) * 65535 / screen_width;
         // let center_y = (screen_height / 2) * 65535 / screen_height;
 
-        let (center_x, center_y) =
-            dbg!(crate::monitor::MonitorInfo::primary_monitor()?.center_point());
-
         send_input_seq(&vec![InputMessage::Mouse {
-            x: center_x,
-            y: center_y,
+            x: 65535 / 2,
+            y: 65536 / 2,
         }])?;
 
         Ok(())
