@@ -1,4 +1,4 @@
-use windows::Win32::Graphics::Gdi::DeleteDC;
+use windows::Win32::Graphics::Gdi::{DPtoLP, DeleteDC};
 use windows::Win32::Graphics::Gdi::{HDC, HMONITOR};
 
 pub(crate) mod info;
@@ -10,10 +10,17 @@ use crate::prelude::Result;
 pub struct MonitorInfo {
     pub(crate) hmonitor: HMONITOR,
     pub(crate) hdc: HDC,
-    pub number: usize,
+    pub number: u32,
     pub device_name: String,
     ///显示器矩形坐标（上，右，下，左）
     pub rect: (i32, i32, i32, i32),
+}
+
+pub struct VirtualScreenInfo {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl MonitorInfo {
@@ -75,6 +82,17 @@ impl MonitorInfo {
         let scale_y = dpiy as f32 / 96.0;
 
         Ok((scale_x, scale_y))
+    }
+
+    /// 规范化显示器矩形坐标左上角位置
+    /// 返回值为 (normalized_x, normalized_y)
+    pub fn absolute_left_top_postion(&self) -> (i32, i32) {
+        let (t, _, _, l) = self.rect;
+
+        let normalized_x = l * 65535 / self.width() as i32;
+        let normalized_y = t * 65535 / self.height() as i32;
+
+        (normalized_x, normalized_y)
     }
 
     /// 获取显示器中心点坐标
@@ -147,6 +165,15 @@ mod tests {
                 "Monitor {} center point: ({}, {})",
                 monitor.number, center_x, center_y
             );
+        }
+    }
+
+    #[test]
+    fn test_absolute_posiotion() {
+        let monitors = MonitorInfo::all_monitors().unwrap();
+        for monitor in monitors {
+            let abs_rect = monitor.absolute_left_top_postion();
+            println!("Monitor {} absolute rect: {:?}", monitor.number, abs_rect);
         }
     }
 }
