@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn test_absolute_posiotion() {
-        let monitors = MonitorInfo::all_monitors().unwrap();
+        let monitors = dbg!(MonitorInfo::all_monitors()).unwrap();
         for monitor in monitors {
             let abs_rect = monitor.absolute_left_top_postion();
             println!("Monitor {} absolute rect: {:?}", monitor.number, abs_rect);

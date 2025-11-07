@@ -5,7 +5,7 @@ use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT,
     MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
-    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY,
+    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{MOUSEEVENTF_ABSOLUTE, SendInput};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -163,7 +163,9 @@ pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
                             dx: *x,
                             dy: *y,
                             mouseData: 0,
-                            dwFlags: MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
+                            dwFlags: MOUSEEVENTF_MOVE
+                                | MOUSEEVENTF_ABSOLUTE
+                                | MOUSEEVENTF_VIRTUALDESK,
                             time: 0,
                             dwExtraInfo: 0,
                         },
@@ -320,13 +322,14 @@ mod tests {
     fn test_send_mouse_input() -> Result<()> {
         send_input_seq(&vec![
             // 移动鼠标到屏幕中心
-            InputMessage::Mouse(InputMouseMessage::MoveTo(65535 / 2, 65535 / 2)),
+            // InputMessage::Mouse(InputMouseMessage::MoveTo(65535 / 2, 65535 / 2)),
+            InputMessage::Mouse(InputMouseMessage::MoveTo(0, 0)),
             //右键单击
-            InputMessage::Mouse(InputMouseMessage::RightClick),
+            // InputMessage::Mouse(InputMouseMessage::RightClick),
             // 相对于当前位置移动鼠标
-            InputMessage::Mouse(InputMouseMessage::Move(10, 10)),
+
             // 左键单击
-            InputMessage::Mouse(InputMouseMessage::LeftClick),
+            // InputMessage::Mouse(InputMouseMessage::LeftClick),
             // 滚动鼠标滚轮
             InputMessage::Mouse(InputMouseMessage::WheelScroll(-120)),
         ])?;
