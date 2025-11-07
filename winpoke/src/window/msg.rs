@@ -1,13 +1,8 @@
 pub mod keyboard;
 pub mod mouse;
+pub mod input;
 
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBD_EVENT_FLAGS, KEYBDINPUT,
-    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
-    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL, MOUSEINPUT, VIRTUAL_KEY,
-};
-use windows::Win32::UI::Input::KeyboardAndMouse::{MOUSEEVENTF_ABSOLUTE, SendInput};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorPos, SendMessageW, WM_CHAR, WM_COMMAND, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN,
     WM_LBUTTONUP, WM_MOUSEMOVE,
@@ -39,31 +34,12 @@ pub enum WindowMessage {
     MouseDoubleClick(u32, u32),
     /// 发送命令消息，参数为命令ID
     Command(u32),
-    /// 发送输入序列，参数为输入消息序列
-    Input(InputSequence),
 }
 
 impl Default for WindowMessage {
     fn default() -> Self {
         WindowMessage::KeyDown(0)
     }
-}
-
-pub type InputSequence = Vec<InputMessage>;
-
-#[derive(Debug)]
-pub enum InputMessage {
-    Mouse(InputMouseMessage),
-    Keyboard { key: u32, flag: Option<u32> },
-}
-
-#[derive(Debug)]
-pub enum InputMouseMessage {
-    Move(i32, i32),
-    MoveTo(i32, i32),
-    LeftClick,
-    RightClick,
-    WheelScroll(i32),
 }
 
 pub(crate) fn send_message(
@@ -128,123 +104,14 @@ pub(crate) fn send_message_seq(hwnd: HWND, msg_seq: &Vec<Message>) -> Result<()>
                 send_message(hwnd, WM_LBUTTONDOWN, None, Some(lparam), message.count)?;
                 send_message(hwnd, WM_LBUTTONUP, None, Some(lparam), message.count)?;
             }
-            WindowMessage::Input(input_messages) => send_input_seq(input_messages)?,
         }
     }
 
     Ok(())
 }
 
-pub(crate) fn send_input_seq(input_seq: &InputSequence) -> Result<()> {
-    let cbsize = std::mem::size_of::<INPUT>();
-
-    let mut inputs: Vec<INPUT> = Vec::new();
-
-    for input in input_seq {
-        let input = match input {
-            InputMessage::Mouse(mouse_operate) => match mouse_operate {
-                InputMouseMessage::Move(x, y) => INPUT {
-                    r#type: INPUT_MOUSE,
-                    Anonymous: INPUT_0 {
-                        mi: MOUSEINPUT {
-                            dx: *x,
-                            dy: *y,
-                            mouseData: 0,
-                            dwFlags: MOUSEEVENTF_MOVE,
-                            time: 0,
-                            dwExtraInfo: 0,
-                        },
-                    },
-                },
-                InputMouseMessage::MoveTo(x, y) => INPUT {
-                    r#type: INPUT_MOUSE,
-                    Anonymous: INPUT_0 {
-                        mi: MOUSEINPUT {
-                            dx: *x,
-                            dy: *y,
-                            mouseData: 0,
-                            dwFlags: MOUSEEVENTF_MOVE
-                                | MOUSEEVENTF_ABSOLUTE
-                                | MOUSEEVENTF_VIRTUALDESK,
-                            time: 0,
-                            dwExtraInfo: 0,
-                        },
-                    },
-                },
-                InputMouseMessage::LeftClick => {
-                    inputs.push(INPUT {
-                        r#type: INPUT_MOUSE,
-                        Anonymous: INPUT_0 {
-                            mi: MOUSEINPUT {
-                                dwFlags: MOUSEEVENTF_LEFTDOWN,
-                                ..Default::default()
-                            },
-                        },
-                    });
-                    INPUT {
-                        r#type: INPUT_MOUSE,
-                        Anonymous: INPUT_0 {
-                            mi: MOUSEINPUT {
-                                dwFlags: MOUSEEVENTF_LEFTUP,
-                                ..Default::default()
-                            },
-                        },
-                    }
-                }
-                InputMouseMessage::RightClick => {
-                    inputs.push(INPUT {
-                        r#type: INPUT_MOUSE,
-                        Anonymous: INPUT_0 {
-                            mi: MOUSEINPUT {
-                                dwFlags: MOUSEEVENTF_RIGHTDOWN,
-                                ..Default::default()
-                            },
-                        },
-                    });
-                    INPUT {
-                        r#type: INPUT_MOUSE,
-                        Anonymous: INPUT_0 {
-                            mi: MOUSEINPUT {
-                                dwFlags: MOUSEEVENTF_RIGHTUP,
-                                ..Default::default()
-                            },
-                        },
-                    }
-                }
-                InputMouseMessage::WheelScroll(r) => INPUT {
-                    r#type: INPUT_MOUSE,
-                    Anonymous: INPUT_0 {
-                        mi: MOUSEINPUT {
-                            mouseData: *r as _,
-                            dwFlags: MOUSEEVENTF_WHEEL,
-                            ..Default::default()
-                        },
-                    },
-                },
-            },
-            InputMessage::Keyboard { key, flag } => INPUT {
-                r#type: INPUT_KEYBOARD,
-                Anonymous: INPUT_0 {
-                    ki: KEYBDINPUT {
-                        wVk: VIRTUAL_KEY(*key as _),
-                        dwFlags: KEYBD_EVENT_FLAGS(flag.unwrap_or_default()),
-                        ..Default::default()
-                    },
-                },
-            },
-        };
-
-        inputs.push(input);
-    }
-
-    unsafe { SendInput(inputs.as_ref(), cbsize as _) };
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use windows::Win32::UI::Input::KeyboardAndMouse::KEYEVENTF_KEYUP;
 
     use super::*;
     use crate::{prelude::Keyboard, window::WindowInfo};
@@ -292,48 +159,5 @@ mod tests {
                 },
             ]))
             .expect("发送消息失败");
-    }
-
-    #[test]
-    fn test_send_input() -> Result<()> {
-        send_input_seq(&vec![
-            InputMessage::Keyboard {
-                key: Keyboard::LWin.to_virtual_key(),
-                flag: None,
-            },
-            InputMessage::Keyboard {
-                key: Keyboard::Char('D').to_virtual_key(),
-                flag: None,
-            },
-            InputMessage::Keyboard {
-                key: Keyboard::LWin.to_virtual_key(),
-                flag: Some(KEYEVENTF_KEYUP.0),
-            },
-            InputMessage::Keyboard {
-                key: Keyboard::Char('D').to_virtual_key(),
-                flag: Some(KEYEVENTF_KEYUP.0),
-            },
-        ])?;
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_send_mouse_input() -> Result<()> {
-        send_input_seq(&vec![
-            // 移动鼠标到屏幕中心
-            // InputMessage::Mouse(InputMouseMessage::MoveTo(65535 / 2, 65535 / 2)),
-            InputMessage::Mouse(InputMouseMessage::MoveTo(0, 0)),
-            //右键单击
-            // InputMessage::Mouse(InputMouseMessage::RightClick),
-            // 相对于当前位置移动鼠标
-
-            // 左键单击
-            // InputMessage::Mouse(InputMouseMessage::LeftClick),
-            // 滚动鼠标滚轮
-            InputMessage::Mouse(InputMouseMessage::WheelScroll(-120)),
-        ])?;
-
-        Ok(())
     }
 }
