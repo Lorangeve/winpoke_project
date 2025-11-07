@@ -79,7 +79,15 @@ impl MonitorInfo {
 
     /// 规范化显示器矩形坐标左上角位置
     /// 返回值为 (normalized_x, normalized_y)
-    pub fn absolute_left_top_postion(&self) -> (i32, i32) {
+    /// # Example
+    /// ```
+    /// use winpoke::monitor::MonitorInfo;
+    ///
+    /// let monitor = MonitorInfo::primary_monitor().unwrap();
+    ///
+    /// assert!(monitor.absolute_origin_point() == (0,0));
+    /// ```
+    pub fn absolute_origin_point(&self) -> (i32, i32) {
         let (t, _, _, l) = self.rect;
 
         let normalized_x = l * 65535 / self.width() as i32;
@@ -95,6 +103,42 @@ impl MonitorInfo {
         let factor_height = 65535.0 / self.height() as f32;
 
         (factor_width, factor_height)
+    }
+
+    /// 将显示器坐标映射到虚拟屏幕坐标
+    /// # Example
+    /// ```
+    /// // 显示器左上角 (0,0) 应映射到虚拟屏幕坐标 (65535/2, 0)
+    /// // 需要根据显示器位置调整，假设有2个显示器主显示器在右
+    /// use winpoke::monitor::MonitorInfo;
+    /// let primary = MonitorInfo::primary_monitor().unwrap();
+    ///
+    /// let (x, y) = primary.map_to_virtual_screen(0, 0);
+    /// println!("Virtual screen top-left position: ({}, {})", x, y);
+    /// assert!(x == 65535 / 2 && y == 0);
+    ///
+    /// let (x, y) = primary.map_to_virtual_screen(primary.width() as _, primary.height() as _);
+    /// println!("Virtual screen bottom-right position: ({}, {})", x, y);
+    /// assert!(x == 65535 && y == 65535);
+    /// ```
+    pub fn map_to_virtual_screen(&self, x: i32, y: i32) -> (i32, i32) {
+        let virtual_screen = VirtualScreenInfo::new();
+        let VirtualScreenInfo {
+            x: virtual_x,
+            y: virtual_y,
+            ..
+        } = virtual_screen;
+
+        let (t, _, _, l) = self.rect;
+        let (factor_x, factor_y) = virtual_screen.absolute_factor();
+
+        // 坐标原点转换
+        let origin_point = (l - virtual_x, t - virtual_y);
+
+        // 应用偏移
+        let (x, y) = (origin_point.0 + x, origin_point.1 + y);
+
+        ((x as f32 * factor_x) as _, (y as f32 * factor_y) as _)
     }
 
     /// 获取显示器中心点坐标
@@ -121,6 +165,7 @@ impl Drop for MonitorInfo {
     }
 }
 
+#[derive(Debug)]
 pub struct VirtualScreenInfo {
     pub x: i32,
     pub y: i32,
@@ -131,6 +176,13 @@ pub struct VirtualScreenInfo {
 impl VirtualScreenInfo {
     pub fn new() -> Self {
         info::get_virtual_screen()
+    }
+
+    pub fn absolute_factor(&self) -> (f32, f32) {
+        let factor_width = 65535.0 / self.width as f32;
+        let factor_height = 65535.0 / self.height as f32;
+
+        (factor_width, factor_height)
     }
 }
 
@@ -180,15 +232,6 @@ mod tests {
                 "Monitor {} center point: ({}, {})",
                 monitor.number, center_x, center_y
             );
-        }
-    }
-
-    #[test]
-    fn test_absolute_posiotion() {
-        let monitors = dbg!(MonitorInfo::all_monitors()).unwrap();
-        for monitor in monitors {
-            let abs_rect = monitor.absolute_left_top_postion();
-            println!("Monitor {} absolute rect: {:?}", monitor.number, abs_rect);
         }
     }
 }
